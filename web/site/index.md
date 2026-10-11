@@ -9,6 +9,11 @@ UtauTTSは、UTAUボイスバンクの原音接続に学習ベースのイント
 
 Windows、mac、Linuxに対応したデスクトップ版と、Web版があります。
 
+[![](https://img.shields.io/badge/Download-Windows_x64-ED908B)](https://github.com/yh2237/UtauTTS/releases/latest/download/UtauTTS-win-x64.zip)
+
+[![](https://img.shields.io/badge/Download-Linux_x64-ED908B)](https://github.com/yh2237/UtauTTS/releases/latest/download/UtauTTS-linux-x64.zip)
+
+[![](https://img.shields.io/badge/Download-mac_arm64-ED908B)](https://github.com/yh2237/UtauTTS/releases/latest/download/UtauTTS-mac-arm64.zip)
 
 
 ## 使い方
