@@ -5,7 +5,7 @@ description: UtauTTSのWeb版でできることと
 
 # はじめに
 
-UtauTTSは、UTAUボイスバンクの原音接続に学習ベースのイントネーション調整を加えたTTSです。Web版はブラウザで[エディタ](/editor/){target="_self"}を開くだけで使えます。パソコンに入れて使う[デスクトップ版](/desktop/)もあります。
+UtauTTSは、UTAUボイスバンクの原音接続に学習ベースのイントネーション調整を加えたTTSです。Web版はブラウザで[エディタ](/editor/){target="_self"}を開いてください。
 
 ## 動作環境
 
