@@ -59,7 +59,6 @@ export default defineConfig({
   cleanUrls: true,
   outDir: './dist',
   srcExclude: ['README.md', 'shared/**'],
-  // 型はdarkしか許さないが、initialValueは保存された設定がないときの表示に使われる。ライトを既定にする。
   appearance: { initialValue: 'light' } as unknown as { initialValue: 'dark' },
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
@@ -69,7 +68,6 @@ export default defineConfig({
   ],
   ignoreDeadLinks: [/^\/editor\//],
   markdown: { anchor: { slugify } },
-  // 右の目次と前後のページへのリンクを出さず、本文だけの1段組みにする。
   transformPageData(pageData) {
     pageData.frontmatter.aside ??= false
     pageData.frontmatter.prev ??= false
@@ -79,7 +77,7 @@ export default defineConfig({
     logo: '/favicon.png',
     nav: [{ text: 'エディタを開く', link: '/editor/', target: '_self' }],
     sidebar,
-    socialLinks: [{ icon: 'github', link: 'https://github.com/yh2237/UtauTTS' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/yh2237/UtauTTS' },{ icon: 'x', link: 'https://x.com/2237yh' }],
     search: {
       provider: 'local',
       options: {
