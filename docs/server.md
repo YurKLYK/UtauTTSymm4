@@ -245,16 +245,16 @@ ID順にソートされた音源一覧です。
 | `release_set` | boolean | `false` | `release_ms`を明示指定として適用する |
 | `mora_durations_ms` | number[] | | モーラごとの長さ。値は0〜1000 |
 | `unit_overrides` | object[] | なし | unit単位の候補・原音の明示指定（計画の上書き） |
-| `intonation_strength` | number | `4` | 抑揚の強さ（0〜8）。2までは一律、2を超えると大きな動きほど広げる |
-| `apply_pitch` | boolean | `true` | 波形ピッチ再サンプリング |
+| `intonation_strength` | number | `4` | 自動抑揚の強さ（0〜8）。v12では曲線に「強さ/4」を掛ける。詳細は[抑揚の強さ](technical-design.md#抑揚の強さ) |
+| `apply_pitch` | boolean | `true` | Rendererのピッチ処理を有効にする |
 | `context_duration` | boolean | `false` | 日本語のモーラ長を文脈（助詞・句末など）に応じて変える |
 | `context_duration_strength` | number | `1` | 文脈連動の強度（0〜2）。0は既定1.0として扱う |
 | `boundary_tone` | boolean | `true` | 日本語の文末の音調（疑問文の上昇など）を付ける |
 | `boundary_tone_strength` | number | `1` | 境界音調の強度（0〜2）。0は既定1.0として扱う |
 | `stretch_adapt` | boolean | `true` | 原音より大きく伸ばす日本語の長いモーラで、母音側の伸びを音源の実測に合わせて抑える |
 | `stretch_adapt_strength` | number | `1` | 伸縮補正の強度（0〜2）。0は既定1.0として扱う |
-| `microprosody` | boolean | `true` | `utautts-world-phrase`のみ。日本語のF0曲線へ、子音の直後の小さな音高の上下（自然な読み上げで測った値）を足す。`false`で従来と同じ音高 |
-| `timing_warp` | boolean | `true` | `utautts-world-phrase`のみ。出力を、言語別に学習した読み上げの動きに合わせてモーラの中だけ時間伸縮する（日本語・英語・中国語。包絡・モーラの開始・長さ・音高は不変、句の最後のモーラは伸縮しない）。`false`で従来と同じ出力 |
+| `microprosody` | boolean | `true` | 日本語のWORLD合成で、子音の前後の微細な音高変化を補う |
+| `timing_warp` | boolean | `true` | 日本語・英語・中国語のWORLD合成で、学習した時間配分に合わせてモーラ内を伸縮する。包絡・開始時刻・長さ・音高は保ち、句末モーラは伸縮しない |
 | `pause_context` | boolean | `true` | 句読点の種類と発話末で休止長を変える |
 | `pause_context_strength` | number | `1` | 休止長補正の強度（0〜2）。0は既定1.0として扱う |
 | `english_weak_form` | boolean | `true` | 英語の機能語を句中では弱形で読む。明示の読みと辞書を優先する |

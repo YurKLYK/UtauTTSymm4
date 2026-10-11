@@ -1,8 +1,6 @@
 # リリーステスト
 
-リリース用パッケージを作成し、ソースコードだけでは確認できない配布後の動作を検査します。
-
-正式リリースでは、ソース上の単体テストだけでなく、配布ZIPを展開した状態でも機能を確認します。
+リリース前に単体テストを実行し、配布ZIPを展開した状態でも動作を検査します。
 
 ## 一括実行
 
@@ -63,13 +61,16 @@ Windowsの標準ビルドは`Full`プロファイルです。作成済みの日�
 
 ## 更新経路とリリースメタデータ
 
-リリース前には、`appinfo.json`のversionと更新・移行schema、install layoutが前回のリリースから後退していないことを確認します。更新用metadataを導入する前の`v1.2.2`を基準にする場合は、`-PreviousVersion v1.2.2`を指定すると検査スクリプトが当時の基準値を補います。その他のリリースでは、実際の前バージョンを指定してください。
+`appinfo.json`の`version`がタグと一致し、`update_schema`・`migration_schema`・`install_layout`が前回から後退していないことを確認します。比較には前バージョンの各値も渡してください。次はv1.5.0からv1.5.1への更新の例です。
 
 ```powershell
-$expected = 'v1.2.3'  # 作成するタグへ置き換える
+$expected = 'v1.5.1'  # 作成するタグへ置き換える
 .\tools\check-release.ps1 `
   -ExpectedVersion $expected `
-  -PreviousVersion v1.2.2
+  -PreviousVersion v1.5.0 `
+  -PreviousUpdateSchema 1 `
+  -PreviousInstallLayout 2 `
+  -PreviousMigrationSchema 1
 ```
 
 `build-release.ps1`と`test-release-package.ps1`もこの検査を呼び出します。`go test ./cmd/utautts-updater`では現行パッケージの導入と音源・設定の保持を確認します。Qtの配布物self-testでは、初回起動migration schemaの記録とpending update markerの消去も確認します。
@@ -79,7 +80,7 @@ Windows版の更新互換性はGitHub Actionsの`Windows package`で確認しま
 互換性検査では、公開済みの更新元ZIPに含まれる旧アップデーターを使って候補ZIPを導入します。設定、音源、Resampler、Wavtool、ユーザー追加Rendererが保持されること、旧ファイルが残らないこと、実行ファイルが候補版へ置き換わること、更新後のCLIとGUIが起動できることを確認します。現行アップデーターの単体テストでは、Windowsでインストールフォルダが使用中の場合の更新と、失敗時の復旧も確認します。作成済みの候補ZIPをローカルで確認する場合は次を実行します。
 
 ```powershell
-.\tools\test-update-compatibility.ps1 -PreviousVersion v1.4.1
+.\tools\test-update-compatibility.ps1 -PreviousVersion v1.5.0
 ```
 
 GUIでは読み上げ言語を選べることを確認します。右側の設定メニューで発音形式と合成方式を変更できることも確認します。設定画面の「プレリリース版も確認する」は、更新候補にプレリリース版を含めるかを切り替えます。同じ数値バージョンの安定版とプレリリース版がある場合は安定版を選びます。

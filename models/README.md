@@ -4,15 +4,23 @@
 
 ## 同梱モデル
 
-日本語の既定モデル: `frame-intonation-tcn-v12`。英語の既定モデル: `frame-intonation-tcn-en-v1`。中国語の既定モデル: `tone-intonation-zh-v1`。学習と評価: [モデルの学習](../docs/model-training.md)
+| 言語 | 既定モデル |
+| --- | --- |
+| 日本語 | `frame-intonation-tcn-v12` |
+| 英語 | `frame-intonation-tcn-en-v1` |
+| 中国語 | `tone-intonation-zh-v1` |
 
-抑揚モデルはモーラ長を予測しません。モーラ長はGUIで指定した基準値と、言語別の時間規則（「ん」0.9倍、「ー」1.2倍など）で決めます。
+同梱の抑揚モデルはモーラ長を予測しません。長さは指定した基準値と言語別の時間規則（「ん」0.9倍、「ー」1.2倍など）で決めます。学習と評価の手順は[モデルの学習](../docs/model-training.md)にあります。
 
 ## Frame Intonation TCN v12（既定）
 
-`frame-intonation-tcn-v12`は、[Irodori-TTS](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声と、コーパスの音声から学習したF0ヘッドのモデルです。教師のF0は、オクターブの誤推定を前後の値に合わせて折り返し、音量の小さいフレームを除いて作り直しています。v10の曲線は混ぜず、F0ヘッドの曲線だけを自然の振れ幅で使い、曲線全体を50セント下げます。アクセント特徴とモーラの予測には、[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600で学習した基準モデル（v10）を使います。基準モデルは別のファイルにせず、モデルJSONに埋め込んでいます。同じモデルのエネルギーヘッドでモーラの音量（0.75〜1.3倍）も変えます。試聴で以前の既定（v11）より自然と判断し、既定にしました。
+`frame-intonation-tcn-v12`は、[Irodori-TTS](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声と、コーパスの音声からF0ヘッドを学習したモデルです。教師のF0は、オクターブ誤推定を前後の値に合わせて折り返し、音量の小さいフレームを除いて作り直しています。
 
-- 本モデルは相対ピッチ（抑揚）のみを学習し、話者の声質を意図的に再現しません
+アクセント特徴とモーラの予測には、[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600で学習した基準モデル（v10）を使います。基準モデルはモデルJSONに埋め込んでいます。
+
+v10の曲線は混ぜず、F0ヘッドの曲線だけを自然の振れ幅で使い、全体を50セント下げます。エネルギーヘッドでモーラの音量も0.75〜1.3倍に調整します。
+
+- 本モデルは相対ピッチ（抑揚）と音量を学習し、話者の声質を意図的に再現しません
 - 重みはMIT Licenseで配布します。教師の音声・台本・音声合成モデルは再配布しません
 - 通知: [licenses/TSUKUYOMI-CORPUS.txt](../licenses/TSUKUYOMI-CORPUS.txt)、[licenses/MINNADE-JSUT-CORPUS.txt](../licenses/MINNADE-JSUT-CORPUS.txt)、[licenses/MFA-Japanese-NOTICE.txt](../licenses/MFA-Japanese-NOTICE.txt)、[licenses/IRODORI-TEACHER-NOTICE.txt](../licenses/IRODORI-TEACHER-NOTICE.txt)
 

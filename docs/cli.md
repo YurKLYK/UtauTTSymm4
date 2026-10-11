@@ -80,8 +80,8 @@ GUIと同じユーザー辞書は、次のJSONを`--dictionary dictionary.json`�
 | `--prosody-feature-case <id>` | | `--prosody-features` 内のケースID |
 | `--pitch-contours <path>` | | ケース別ピッチ係数JSON（計画へ記録。波形処理には `--apply-pitch` が必要） |
 | `--pitch-case <id>` | | `--pitch-contours` 内のケースID |
-| `--apply-pitch` | `true` | 波形のピッチ再サンプリング |
-| `--intonation-strength` | `4` | 抑揚の強さ（0〜8）。2までは抑揚の曲線に一律の倍率を掛け、2を超えると大きな動きほど広げる（平らな部分は強さ2のまま） |
+| `--apply-pitch` | `true` | Rendererのピッチ処理を有効にする |
+| `--intonation-strength` | `4` | 自動抑揚の強さ（0〜8）。v12では曲線に「強さ/4」を掛ける。詳細は[抑揚の強さ](technical-design.md#抑揚の強さ) |
 | `--context-duration` | `false` | 日本語のモーラ長を文脈（助詞・句末など）に応じて変える |
 | `--context-duration-strength` | `1` | 文脈連動の強度（0〜2）。0は既定1.0として扱う |
 | `--boundary-tone` | `true` | 日本語の文末の音調（疑問文の上昇など）を付ける |
@@ -91,8 +91,8 @@ GUIと同じユーザー辞書は、次のJSONを`--dictionary dictionary.json`�
 | `--pause-context` | `true` | 句読点の種類と発話末で休止長を変える |
 | `--pause-context-strength` | `1` | 休止長補正の強度（0〜2）。0は既定1.0として扱う |
 | `--english-weak-form` | `true` | 英語の機能語を句中では弱形で読む。明示の読みと辞書を優先する |
-| `--microprosody` | `true` | 日本語の`utautts-world-phrase`のF0曲線へ、子音の直後の小さな音高の上下（自然な読み上げで測った値、母音の開始の−20〜+40 ms）を足す。`false`で従来と同じ音高 |
-| `--timing-warp` | `true` | `utautts-world-phrase`の出力を、言語別に学習した読み上げの動きに合わせてモーラの中だけ時間伸縮する（日本語・英語・中国語）。包絡（声・音質）、モーラの開始、長さ、音高は変えず、句の最後のモーラは伸縮しない。`false`で従来と同じ出力 |
+| `--microprosody` | `true` | 日本語のWORLD合成で、子音の前後の微細な音高変化を補う（母音開始の−20〜+40 ms） |
+| `--timing-warp` | `true` | 日本語・英語・中国語のWORLD合成で、学習した時間配分に合わせてモーラ内を伸縮する。包絡・開始時刻・長さ・音高は保ち、句末モーラは伸縮しない |
 | `--renderer <id>` | 既定Renderer | Renderer ID（省略時は設定された優先度が最大のもの。未知の明示IDはエラー） |
 | `--resampler <id>` | 自動選択 | Classic UTAUで使う`Resamplers/`からの相対ID |
 | `--wavtool <id>` | `builtin` | Classic UTAUで使う`Wavtools/`からの相対ID |

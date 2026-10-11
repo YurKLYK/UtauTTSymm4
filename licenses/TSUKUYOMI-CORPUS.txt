@@ -7,7 +7,7 @@ Corpus: つくよみちゃんコーパス Vol.1 声優統計コーパス（JVS�
 Source: https://tyc.rei-yumesaki.net/material/corpus/
 
 UtauTTS uses this corpus to train frame-intonation models. Those models learn
-relative pitch (intonation) only and do not intentionally model the speaker's
+relative pitch (intonation) and energy and do not intentionally model the speaker's
 voice quality. UtauTTS redistributes only the trained weights, not the corpus
 audio or scripts. The model weights are distributed under the MIT License
 (see LICENSE).

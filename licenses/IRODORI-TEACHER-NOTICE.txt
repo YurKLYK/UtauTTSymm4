@@ -1,10 +1,10 @@
 Irodori-TTS teacher data for frame-intonation-tcn-v12
 =====================================================
 
-The F0 head of frame-intonation-tcn-v12 was trained on relative pitch measured from
-speech that UtauTTS generated locally with a third-party text-to-speech model.
-UtauTTS redistributes only the trained F0 head weights (inside the model JSON),
-not the generated audio, the scripts, or the text-to-speech model.
+The F0 and energy heads of frame-intonation-tcn-v12 were trained on relative pitch
+and energy measured from speech that UtauTTS generated locally with a third-party
+text-to-speech model. UtauTTS redistributes only the trained weights (inside the
+model JSON), not the generated audio, the scripts, or the text-to-speech model.
 
 Text-to-speech model (teacher)
     Irodori-TTS v4.1-Small, Aratako
@@ -28,7 +28,7 @@ Scripts read by the teacher
 Alignment
     Montreal Forced Aligner, japanese_mfa (see licenses/MFA-Japanese-NOTICE.txt)
 
-The model learns relative pitch (intonation) only and does not intentionally
+The model learns relative pitch (intonation) and energy and does not intentionally
 reproduce any speaker's voice. The publishers' terms at the URLs above govern
 the use of their models and texts and remain the authority; this notice is
 informational and does not restate or interpret them.

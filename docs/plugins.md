@@ -1,7 +1,5 @@
 # モデル／Rendererプラグイン
 
-Renderer、Classic UTAUツール、抑揚モデルを追加または配布するための仕様を説明します。
-
 モデルとRendererは、GUI、CLI、Serverで共通の変わらないIDで選びます。実行ファイルの隣にある`models/`と`renderer/`を自動検出し、CLIとServerでは`--model-dir`／`--renderer-dir`で探索先を追加できます。明示した探索先は同梱定義より優先されます。
 
 ## Renderer manifest の仕様
@@ -48,11 +46,11 @@ Rendererの追加・更新はZIPインストールでは行いません。`rende
 
 ## Renderer設定と機能
 
-UtauTTSが解釈する設定（モーラ長、抑揚の強さ、文末の音調、WORLDの時間伸縮、Classicのresamplerなど）は、既定値・範囲・表示と対象のproviderを、Go側の設定表（`internal/settings`）の1か所で定義します。カタログは、設定表のうちそのRendererのproviderに適用される項目をmanifestの設定へ加えます。そのため同梱Rendererのmanifestは`settings`を持ちません。manifestの`settings`には、設定表にない外部provider固有の項目だけを宣言します。設定表と同じIDを宣言すると、そのRendererでは既定値や範囲を上書きできます。
+共通設定と内蔵Providerの設定は、`internal/settings`で既定値・範囲・表示・適用先を定義します。カタログが該当する設定を加えるため、同梱manifestに`settings`は不要です。外部Provider固有の設定はmanifestの`settings`に宣言します。共通設定と同じIDを宣言すると、そのRendererの既定値や範囲を上書きできます。
 
 加えた項目はGUIの設定ウィンドウにRendererごとのタブとして表示され、そのRendererの設定として`config.ini`へ保存されます。CLIとServerからも同じIDで指定できます。
 
-設定は合成リクエストの`renderer_settings`マップとして渡されます。ただし、リクエストのトップレベル項目（`mora_duration_ms`や`intonation_strength`など）と同じIDの設定は、カード単位の値を優先するためこのマップには含まれません。GUIでは宣言した設定が新しいカードの既定値になり、カードごとの設定がそれを上書きします。
+GUIでは設定値を合成リクエストの`renderer_settings`マップで渡します。`mora_duration_ms`や`intonation_strength`などカード単位の値は、マップに重ねずトップレベル項目で渡します。CLI・APIで両方を指定した場合は`renderer_settings`が優先されます。
 
 ```json
 {
@@ -96,7 +94,7 @@ UTAU互換のresampler呼び出しは、入力WAV、出力WAV、音高、velocit
 
 外部wavtoolを選んだ場合はOpenUtau Classic Rendererと同じ位置引数で接続し、`builtin`ではUtauTTS内蔵の5点包絡線処理を使います。外部実行ファイルの利用条件は配布元の規約に従ってください。
 
-resamplerの既定値はvelocity 100、空のflags、modulation 0、tempo 120です。`offset`、必要長、consonant、cutoff、volumeを含めた13引数をOpenUTAU互換の順序で渡します。
+resamplerの既定値はvelocity 100、空のflags、modulation 0、tempo 120です。
 
 ノート単位の設定例です。`position`は読みのモーラ位置で、CVVC transitionにも親モーラの設定が引き継がれます。省略した値はRenderer全体の設定を使います。
 
