@@ -26,3 +26,14 @@
 .VPDocAside .VPDocOutlineItem .outline-link {
   font-size: 15px;
 }
+
+.vp-doc h2 {
+  margin-top: 40px;
+  border-top: none;
+  padding-top: 0;
+}
+
+.VPSidebar nav .group + .group {
+  border-top: none;
+  padding-top: 0;
+}

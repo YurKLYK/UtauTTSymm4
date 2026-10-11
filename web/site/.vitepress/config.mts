@@ -69,13 +69,15 @@ export default defineConfig({
   ],
   ignoreDeadLinks: [/^\/editor\//],
   markdown: { anchor: { slugify } },
+  // 右の目次と前後のページへのリンクを出さず、本文だけの1段組みにする。
+  transformPageData(pageData) {
+    pageData.frontmatter.aside ??= false
+    pageData.frontmatter.prev ??= false
+    pageData.frontmatter.next ??= false
+  },
   themeConfig: {
     logo: '/favicon.png',
-    nav: [
-      { text: 'デスクトップ版', link: '/desktop/', activeMatch: '^/desktop/' },
-      { text: 'Web版', link: '/web/', activeMatch: '^/web/' },
-      { text: 'エディタを開く', link: '/editor/', target: '_self' },
-    ],
+    nav: [{ text: 'エディタを開く', link: '/editor/', target: '_self' }],
     sidebar,
     socialLinks: [{ icon: 'github', link: 'https://github.com/yh2237/UtauTTS' }],
     search: {
