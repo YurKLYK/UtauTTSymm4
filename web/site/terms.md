@@ -1,6 +1,6 @@
 ---
 title: 利用条件とライセンス
-description: 作った音声の利用条件と、UtauTTSのライセンス
+description: UtauTTSのライセンス
 ---
 
 # 利用条件とライセンス

@@ -21,6 +21,8 @@ description: デスクトップ版でのWAV、USTX、AviUtl向けexoの書き出
 
 「USTXとして書き出す...」で、OpenUtauで開けるプロジェクト（`.ustx`）に変換します。
 
+USTXへ書きだしは作りかけなので若干壊れてます。
+
 ## AviUtl向けのexo
 
 AviUtlの拡張編集へ、カードごとの音声を並べて読み込めます。

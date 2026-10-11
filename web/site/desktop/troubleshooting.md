@@ -1,9 +1,9 @@
 ---
-title: 困ったとき
-description: デスクトップ版で音源が出ない、起動しないときの確認点
+title: トラブルシューティング
+description: デスクトップ版のトラブルシューティング
 ---
 
-# 困ったとき
+# トラブルシューティング
 
 ## 音源が一覧に出ない
 
@@ -31,7 +31,7 @@ Linux版では、`runtime/utautts-openjtalk-features`に実行権限があるか
 
 ## Linuxで起動しない
 
-端末から`./utautts`を実行し、足りないライブラリの名前を確かめます。Qt Quick、Qt Quick Controls、Qt Multimediaのパッケージが必要です（[インストール](/desktop/#linux)）。ZIPの展開で実行権限が外れた場合は、`chmod +x`を実行し直してください。
+端末から`./utautts`を実行し、足りないライブラリの名前を確かめます。Qt Quick、Qt Quick Controls、Qt Multimediaのパッケージが必要です（[インストール](/desktop/#linux)）。
 
 MangoHudを有効にしていると、音声の初期化で終了することがあります。その場合は、MangoHudを無効にして起動してください。
 
@@ -42,10 +42,6 @@ MANGOHUD=0 ./utautts
 ## Linuxで日本語が四角い記号になる
 
 日本語のフォントが入っていません。Debian・Ubuntuでは、`sudo apt-get install fontconfig fonts-noto-cjk`を実行してから起動し直してください。
-
-## 音声ができない・合成が遅い
-
-合成中は、ログの画面に処理の内容が出ます。文章、音源、Renderer、抑揚モデルの組み合わせを確かめてください。初期のRendererと短い文章で試すと、原因を絞り込めます。
 
 ## 不具合を報告する
 
