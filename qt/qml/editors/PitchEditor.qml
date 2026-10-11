@@ -17,9 +17,9 @@ Item {
     property bool hoveredEnd: false
     property var points: []
     property var autoPoints: []
-    property real pitchRange: 300
-    property bool pitchDragging: false
-    readonly property real maximumPitchCents: 1200
+    // 縦の表示範囲と編集できる範囲（±セント）。
+    readonly property real pitchRange: 800
+    readonly property real maximumPitchCents: 800
     property var morae: []
     property var moraDurations: []
     property var moraPositions: []
@@ -328,17 +328,6 @@ Item {
         canvas.requestPaint();
     }
 
-    function refitPitchRange() {
-        if (root.pitchDragging)
-            return;
-        let peak = 0;
-        for (let index = 0; index < root.points.length; ++index) {
-            if (root.pointIsEditable(index))
-                peak = Math.max(peak, Math.abs(root.pitchAt(index)));
-        }
-        root.pitchRange = Math.max(300, Math.min(root.maximumPitchCents, Math.ceil(peak * 1.15 / 100) * 100));
-    }
-
     function pitchScale(height) {
         return Math.max(.05, Math.min(.36, height / 760)) * 300 / root.pitchRange;
     }
@@ -451,8 +440,7 @@ Item {
                     const viewLeft = viewport.contentX - 40;
                     const viewRight = viewport.contentX + viewport.width + 40;
                     const inView = x => x >= viewLeft && x <= viewRight;
-                    const gridLimit = Math.floor(root.pitchRange / 300) * 300;
-                    for (let cents = -gridLimit; cents <= gridLimit; cents += 300) {
+                    for (let cents = -root.pitchRange; cents <= root.pitchRange; cents += 400) {
                         ctx.strokeStyle = cents === 0 ? root.axisColor : root.gridColor;
                         ctx.setLineDash(cents === 0 ? [] : [4, 5]);
                         ctx.beginPath();
@@ -810,16 +798,12 @@ Item {
                                 root.hoveredPoint = -1;
                             canvas.requestPaint();
                         }
-                        onPressed: mouse => {
-                            root.pitchDragging = true;
-                            updatePitch(mouse);
-                        }
+                        onPressed: mouse => updatePitch(mouse)
                         onPositionChanged: mouse => {
                             if (pressed)
                                 updatePitch(mouse);
                         }
                         onReleased: {
-                            root.pitchDragging = false;
                             root.pointsEdited(root.points.slice());
                             root.hideHud();
                             if (!containsMouse)
@@ -828,7 +812,6 @@ Item {
                         }
                         onDoubleClicked: root.resetPitchAt(index)
                         onCanceled: {
-                            root.pitchDragging = false;
                             root.hideHud();
                             root.hoveredPoint = -1;
                             canvas.requestPaint();
@@ -879,23 +862,12 @@ Item {
         }
     }
 
-    onPointsChanged: {
-        root.refitPitchRange();
-        canvas.requestPaint();
-    }
-    onAutoPointsChanged: {
-        root.refitPitchRange();
-        canvas.requestPaint();
-    }
-    onPitchDraggingChanged: root.refitPitchRange()
-    onPitchRangeChanged: canvas.requestPaint()
+    onPointsChanged: canvas.requestPaint()
+    onAutoPointsChanged: canvas.requestPaint()
     onAccentColorChanged: canvas.requestPaint()
     onAxisColorChanged: canvas.requestPaint()
     onGridColorChanged: canvas.requestPaint()
-    onMoraeChanged: {
-        root.refitPitchRange();
-        canvas.requestPaint();
-    }
+    onMoraeChanged: canvas.requestPaint()
     onMoraDurationsChanged: canvas.requestPaint()
     onMoraPositionsChanged: canvas.requestPaint()
     onMoraWidthChanged: canvas.requestPaint()

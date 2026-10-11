@@ -45,11 +45,9 @@ Item {
     property bool snapEnabled: true
     property real currentScrollX: 0
     property var timingEditor: null
-    // 縦の表示範囲（±セント）。点とフレームの曲線に合わせて300〜1200で広げ、ドラッグ中は変えない。
-    property real pitchRange: 300
-    property bool frameDragging: false
-    readonly property bool pitchRangeFrozen: !!root.gesture || root.frameDragging
-    readonly property real maximumPitchCents: 1200
+    // 縦の表示範囲と編集できる範囲（±セント）。
+    readonly property real pitchRange: 800
+    readonly property real maximumPitchCents: 800
     readonly property real sidePadding: timingEditor ? timingEditor.sidePadding : 36
     property var gesture: null
     property real gestureDuration: 0
@@ -132,23 +130,6 @@ Item {
         return root.noteCenterY() - cents * root.noteLaneH / (2 * root.pitchRange);
     }
 
-    function refitPitchRange() {
-        if (root.pitchRangeFrozen)
-            return;
-        let peak = 0;
-        for (let index = 0; index < root.frameDisplayCount; ++index) {
-            if (root.frameHasPronunciation(index))
-                peak = Math.max(peak, Math.abs(root.frameTotalAt(index)));
-        }
-        if (root.timingEditor) {
-            for (let index = 0; index < root.timingEditor.points.length; ++index) {
-                if (root.timingEditor.pointIsEditable(index))
-                    peak = Math.max(peak, Math.abs(root.timingEditor.pitchAt(index)));
-            }
-        }
-        root.pitchRange = Math.max(300, Math.min(root.maximumPitchCents, Math.ceil(peak * 1.15 / 100) * 100));
-    }
-
     function frameAtTime(timeMs) {
         const target = Math.round(timeMs / root.frameStepMs());
         return Math.max(0, Math.min(root.frameDisplayCount - 1, target));
@@ -197,7 +178,6 @@ Item {
             root.hudText = "";
             return -1;
         }
-        root.frameDragging = true;
         const desired = Math.max(-root.maximumPitchCents, Math.min(root.maximumPitchCents,
                 (root.noteCenterY() - y) / root.noteLaneH * 2 * root.pitchRange));
         const values = root.paddedFrameManual();
@@ -896,8 +876,7 @@ Item {
                     ctx.font = "10px sans-serif";
                     if (root.timingEditor) {
                         const middle = root.noteCenterY();
-                        const gridLimit = Math.floor(root.pitchRange / 300) * 300;
-                        for (let cents = -gridLimit; cents <= gridLimit; cents += 300) {
+                        for (let cents = -root.pitchRange; cents <= root.pitchRange; cents += 400) {
                             const y = middle - cents * root.noteLaneH / (2 * root.pitchRange);
                             ctx.strokeStyle = root.gridColor;
                             ctx.beginPath();
@@ -1219,7 +1198,6 @@ Item {
                         const trimmed = root.trimmedFrames(root.manualFrames);
                         if (JSON.stringify(trimmed) !== JSON.stringify(root.trimmedFrames(frameBackup)))
                             root.framesEdited(trimmed);
-                        root.frameDragging = false;
                         activeKind = "";
                         pendingKind = "";
                         dragCursor = 0;
@@ -1249,7 +1227,6 @@ Item {
                     ToolTip.hide();
                     if (activeKind === "frame" || pendingKind === "frame") {
                         root.manualFrames = frameBackup.slice();
-                        root.frameDragging = false;
                         activeKind = "";
                         pendingKind = "";
                         dragCursor = 0;
@@ -1656,40 +1633,22 @@ Item {
         waveformCanvas.requestPaint();
     }
     onMoraPositionsChanged: {
-        waveformCanvas.requestPaint();
-        
+        waveformCanvas.requestPaint();        
         scheduleSelectedFieldRefresh();
     }
     onMoraDurationsChanged: scheduleSelectedFieldRefresh()
     onSelectedUnitIndexChanged: {
-        scheduleSelectedFieldRefresh();
-    }
+        scheduleSelectedFieldRefresh();    }
     onSelectedBoundaryChanged: {
-        
-        waveformCanvas.requestPaint();
+                waveformCanvas.requestPaint();
     }
     onOverridesChanged: {
         scheduleSelectedFieldRefresh();
         waveformCanvas.requestPaint();
     }
     onPlaybackMsChanged: waveformCanvas.requestPaint()
-    onAutoFramesChanged: {
-        root.refitPitchRange();
-        waveformCanvas.requestPaint();
-    }
-    onManualFramesChanged: {
-        root.refitPitchRange();
-        waveformCanvas.requestPaint();
-    }
-    onPitchRangeFrozenChanged: root.refitPitchRange()
-    onPitchRangeChanged: waveformCanvas.requestPaint()
-
-    Connections {
-        target: root.timingEditor
-        ignoreUnknownSignals: true
-        function onPointsChanged() { root.refitPitchRange(); }
-        function onAutoPointsChanged() { root.refitPitchRange(); }
-    }
+    onAutoFramesChanged: waveformCanvas.requestPaint()
+    onManualFramesChanged: waveformCanvas.requestPaint()
     onFrameMsChanged: waveformCanvas.requestPaint()
     onUnitsChanged: {
         if (!!root.gesture && !root.gestureModelMatches()) {
@@ -1705,8 +1664,7 @@ Item {
             root.hudText = "";
         }
         ensureUnitSelection();
-        waveformCanvas.requestPaint();
-        scheduleSelectedFieldRefresh();
+        waveformCanvas.requestPaint();        scheduleSelectedFieldRefresh();
     }
     onWidthChanged: waveformCanvas.requestPaint()
 }
