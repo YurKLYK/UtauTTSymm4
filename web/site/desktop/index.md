@@ -5,7 +5,7 @@ description: デスクトップ版の入手、起動、更新
 
 # インストール
 
-デスクトップ版は、[GitHubのリリース](https://github.com/yh2237/UtauTTS/releases)からダウンロードしてください。インストーラーはありません。展開したフォルダを好きなところにおいてショートカットとか作って下さい。
+環境に合うZIPを[GitHub Releases](https://github.com/yh2237/UtauTTS/releases)からダウンロードしてください。展開したフォルダを好きなところにおいてショートカットとか作って下さい。
 
 | ファイル | 対応環境 |
 | --- | --- |
@@ -13,18 +13,18 @@ description: デスクトップ版の入手、起動、更新
 | `UtauTTS-mac-arm64.zip` | macOS（Apple Silicon） |
 | `UtauTTS-linux-x64.zip` | Linux（x64） |
 
-名前に`Server`が付くものは、HTTPで音声合成を使うためのServer版です（[UtauTTS Server](https://github.com/yh2237/UtauTTS/blob/main/docs/server.md)）。
+名前に`Server`が付くZIPはHTTP API向けです（[UtauTTS Server](https://github.com/yh2237/UtauTTS/blob/main/docs/server.md)）。
 
-展開したフォルダの中身は構成を変えずに使ってください。
+展開したフォルダ内の構成は変更しないでください。
 
 ## Windows
 
-1. `UtauTTS-win-x64.zip`を好きなフォルダへ展開します。
+1. `UtauTTS-win-x64.zip`を任意のフォルダへ展開します。
 2. 展開したフォルダの`utautts.exe`を起動します。
 
 ## macOS
 
-macOS版はApple Silicon向けです。Appleの署名と公証を受けていないため、初回の起動時に警告が出ます。公式のGitHubリリースからダウンロードしたファイルであることを確かめてから実行して下さい。
+macOS版はAppleの署名・公証を受けていないため、初回起動時に警告が出ます。公式のGitHub Releasesから入手したZIPを展開し、次を実行してください。
 
 ```bash
 cd "/path/to/extracted-folder"
@@ -36,7 +36,7 @@ open "utautts.app"
 
 ## Linux
 
-Linux版は、システムにインストールしたQt 6.5以降（Qt Quick、Qt Quick Controls、Qt Multimedia）と日本語フォントを使います。Debian 13では、次のパッケージをインストールします。
+Linux版にはQt 6.5以降（Qt Quick、Qt Quick Controls、Qt Multimedia）と日本語フォントが必要です。Debian 13では次のパッケージをインストールします。
 
 ```bash
 sudo apt-get update
@@ -52,8 +52,10 @@ chmod +x utautts tools/* runtime/utautts-openjtalk-features runtime/utautts-worl
 ./utautts
 ```
 
-ほかのディストリビューションでは、同じ機能のQtパッケージをインストールしてください。
+ほかのディストリビューションでは、対応するQtパッケージをインストールしてください。
 
 ## 更新
 
-新しいバージョンが出ると、起動時に新しいバージョンの通知が出るようになります。特にこだわりが無い限り更新してください。更新に失敗する場合は大抵UtauTTSのファイルを他のプロセスが掴んでいる場合が殆どだと思うので、エクスプローラとかを全部落としてもう一度試してください。
+新しいバージョンは起動時に通知されます。特にこだわりがなければ更新してください。
+
+更新に失敗する場合は大抵UtauTTSのファイルを他のプロセスが掴んでいる場合が殆どだと思うので、エクスプローラとかを全部落としてもう一度試してください。

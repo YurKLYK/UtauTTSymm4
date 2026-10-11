@@ -7,9 +7,9 @@ description: デスクトップ版のトラブルシューティング
 
 ## 音源が一覧に出ない
 
-- 音源が、起動ファイルと同じ場所の`voice/音源名/`に置かれているか確かめます。
-- 音源フォルダの中に`oto.ini`があるか確かめます。
-- 置いたあとに、「ファイル」→「音源とプラグイン」→「音源を再読込」を選びます。
+- 実行ファイルと同じ場所の`voice/音源名/`に音源フォルダを置いてください。
+- 音源フォルダに`oto.ini`があるか確認してください。
+- 配置後に「ファイル」→「音源とプラグイン」→「音源を再読込」を実行してください。
 
 詳しい置き方は[音源の追加](/desktop/voicebanks)を参照してください。
 
@@ -17,21 +17,22 @@ description: デスクトップ版のトラブルシューティング
 
 実行ファイルを`Resamplers`または`Wavtools`フォルダへ置き、「ファイル」→「音源とプラグイン」→「Classic UTAUを再読み込み」を選びます。
 
-## 「utautts-openjtalk-features not found」と出る
+## Open JTalkの解析ファイルが見つからない
 
-文章の解析に使うファイルが見つかっていません。ZIPを展開し直してください。セキュリティソフトが実行ファイルを削除していることがあります。除外の設定は、`utautts.exe`だけでなく展開したフォルダごとに指定してください。
+`utautts-openjtalk-features not found`は、文章解析に使うファイルが見つからないエラーです。配布ZIPを展開し直してください。セキュリティソフトがファイルを削除している場合は、展開先のフォルダごと除外設定を指定してください。
 
-Linux版では、`runtime/utautts-openjtalk-features`に実行権限があるかも確かめてください。
+Linux版では`runtime/utautts-openjtalk-features`の実行権限も確認してください。
 
-## 読みやモーラ数が合わないというエラーが出る
+## 読みやモーラ数が合わない
 
-- 固有名詞や略語を[辞書設定](/desktop/settings#辞書設定)に登録します。
-- 長音（ー）、促音（っ）、拗音（ゃゅょ）を含む読みを確かめます。
-- それでも直らない場合は、入力した文章を添えて報告してください。
+- 固有名詞や略語は[辞書設定](/desktop/settings#辞書設定)に登録してください。
+- 長音（ー）、促音（っ）、拗音（ゃゅょ）を含む読みを確認してください。
+
+解決しない場合は、入力した文章を添えて[不具合を報告](#不具合を報告する)してください。
 
 ## Linuxで起動しない
 
-端末から`./utautts`を実行し、足りないライブラリの名前を確かめます。Qt Quick、Qt Quick Controls、Qt Multimediaのパッケージが必要です（[インストール](/desktop/#linux)）。
+端末から`./utautts`を実行し、不足するライブラリ名を確認してください。必要なQtパッケージは[インストール](/desktop/#linux)にあります。
 
 MangoHudを有効にしていると、音声の初期化で終了することがあります。その場合は、MangoHudを無効にして起動してください。
 
@@ -41,8 +42,8 @@ MANGOHUD=0 ./utautts
 
 ## Linuxで日本語が四角い記号になる
 
-日本語のフォントが入っていません。Debian・Ubuntuでは、`sudo apt-get install fontconfig fonts-noto-cjk`を実行してから起動し直してください。
+日本語フォントが入っていません。Debian・Ubuntuでは`sudo apt-get install fontconfig fonts-noto-cjk`を実行し、アプリを再起動してください。
 
 ## 不具合を報告する
 
-「ヘルプ」→「診断情報を書き出す...」でJSONを保存し、操作の手順と画面に出たエラーを添えて[GitHubのIssues](https://github.com/yh2237/UtauTTS/issues)へ報告してください。診断情報には、入力した文章、音声、音源の場所は記録されません。
+[GitHub Issues](https://github.com/yh2237/UtauTTS/issues)または[@2237yh](https://x.com/2237yh)へ報告してください。
