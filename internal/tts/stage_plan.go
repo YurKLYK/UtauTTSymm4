@@ -21,6 +21,9 @@ func buildSynthesisPlan(cfg Config, profile languageProfile, bank *voicebank.Ban
 				predictions[i].DurationFactor = 1
 				predictions[i].EnergyFactor = 1
 			}
+		} else {
+			// キャッシュ内の自動予測へ手動値を残さない。
+			predictions = append([]prosody.Prediction(nil), predictions...)
 		}
 		for i, factor := range cfg.PitchFactors {
 			if factor <= 0 {

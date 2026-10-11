@@ -117,8 +117,8 @@ func prosodyComputationKeyFor(cfg Config) prosodyComputationKey {
 			"cd=%v cds=%v bt=%v bts=%v sa=%v sas=%v pc=%v pcs=%v ewf=%v tone=%v color=%v",
 		cfg.MoraDurationMS, cfg.PauseDurationMS, cfg.ProsodyPitchOnly, cfg.ApplyPitch,
 		cfg.IntonationStrength, cfg.ReleaseMS, rendererCapabilityKey(cfg.RendererCapabilities),
-		cfg.ContextDuration, cfg.ContextDurationStrength, cfg.BoundaryTone, cfg.BoundaryToneStrength,
-		cfg.StretchAdapt, cfg.StretchAdaptStrength, cfg.PauseContext, cfg.PauseContextStrength,
+		optionalBoolKey(cfg.ContextDuration), cfg.ContextDurationStrength, optionalBoolKey(cfg.BoundaryTone), cfg.BoundaryToneStrength,
+		optionalBoolKey(cfg.StretchAdapt), cfg.StretchAdaptStrength, optionalBoolKey(cfg.PauseContext), cfg.PauseContextStrength,
 		optionalBoolKey(cfg.EnglishWeakForm), cfg.Tone, cfg.Color)
 	return prosodyComputationKey{
 		text: cfg.Text, reading: cfg.Reading, language: cfg.Language, phonemizer: cfg.Phonemizer,
