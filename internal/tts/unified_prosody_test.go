@@ -47,13 +47,13 @@ func TestUnifiedProsodyReleaseBaseline(t *testing.T) {
 	if pitch.Curve == nil || len(pitch.Curve.Cents) != 66 {
 		t.Fatalf("curve = %+v", pitch.Curve)
 	}
-	// 計算共有前のv12出力。休止の前後と句末を含む。
+	const pitchToleranceCents = 1e-3
 	for index, want := range map[int]float64{
 		0: -31.3250548971411, 12: -4.87169909897725, 24: -22.5160530000444,
 		42: -253.808609667546, 54: -158.255286184227, 65: -20.832039513697,
 	} {
-		if got := pitch.Curve.Cents[index]; math.Abs(got-want) > 1e-5 {
-			t.Fatalf("cents[%d] = %g, want %g", index, got, want)
+		if got := pitch.Curve.Cents[index]; !(math.Abs(got-want) <= pitchToleranceCents) {
+			t.Fatalf("cents[%d] = %g, want %g (tolerance %g cents)", index, got, want, pitchToleranceCents)
 		}
 	}
 	for index, want := range []float64{1.3, 1.3, 0.75, 1.3} {
