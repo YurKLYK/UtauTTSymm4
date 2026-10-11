@@ -6,7 +6,7 @@ import (
 )
 
 func TestProsodyFallbackModelPath(t *testing.T) {
-	configured := filepath.Join("models", "frame-intonation-tcn-v10.json")
+	configured := filepath.Join("models", "frame-intonation-tcn-v12.json")
 	cases := []struct {
 		language string
 		want     string

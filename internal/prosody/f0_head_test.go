@@ -1,19 +1,20 @@
 package prosody
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-// 同梱のF0ヘッドつきモデルJSON（v11）が、基準モデルとF0・エネルギーヘッドを合わせて読めることを確認する。
+// 同梱のF0ヘッドつきモデルJSON（v12）が、埋め込んだ基準モデルとF0・エネルギーヘッドを合わせて読めることを確認する。
 func TestBundledF0HeadModelLoads(t *testing.T) {
-	path := filepath.Join("..", "..", "models", "frame-intonation-tcn-v11.json")
+	path := filepath.Join("..", "..", "models", "frame-intonation-tcn-v12.json")
 	model, err := LoadModel(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.ID != "frame-intonation-tcn-v11" || model.Language != "ja" {
+	if model.ID != "frame-intonation-tcn-v12" || model.Language != "ja" {
 		t.Fatalf("identity = %q %q %d", model.ID, model.Language, model.DefaultPriority)
 	}
 	if !model.HasFrameContour() || !model.RequiresExternalFeatures() {
@@ -32,16 +33,21 @@ func TestBundledF0HeadModelLoads(t *testing.T) {
 }
 
 func TestF0HeadModelRejectsMissingHead(t *testing.T) {
-	directory := t.TempDir()
-	base, err := os.ReadFile(filepath.Join("..", "..", "models", "frame-intonation-tcn-v10.json"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "models", "frame-intonation-tcn-v12.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(directory, "base.json"), base, 0o644); err != nil {
+	var bundled struct {
+		BaseModelData json.RawMessage `json:"base_model_data"`
+	}
+	if err := json.Unmarshal(data, &bundled); err != nil || len(bundled.BaseModelData) == 0 {
+		t.Fatalf("bundled model has no embedded base: %v", err)
+	}
+	manifest, err := json.Marshal(map[string]any{"id": "broken", "display_name": "Broken", "base_model_data": bundled.BaseModelData, "f0_head": ""})
+	if err != nil {
 		t.Fatal(err)
 	}
-	manifest := []byte(`{"id":"broken","display_name":"Broken","base_model":"base.json","f0_head":""}`)
-	path := filepath.Join(directory, "broken.json")
+	path := filepath.Join(t.TempDir(), "broken.json")
 	if err := os.WriteFile(path, manifest, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -50,28 +56,13 @@ func TestF0HeadModelRejectsMissingHead(t *testing.T) {
 	}
 }
 
-// 既定の日本語抑揚モデルv11は、v10を0.65混ぜ、エネルギーヘッドでモーラの音量も変える設定で読める。
-func TestBundledV11BlendsWithV10(t *testing.T) {
-	model, err := LoadModel(filepath.Join("..", "..", "models", "frame-intonation-tcn-v11.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if model.F0Head == nil || model.F0HeadBaseBlend != 0.65 || !model.F0HeadEnergy || model.DefaultPriority <= 120 {
-		t.Fatalf("v11: head %v blend %v energy %v priority %d", model.F0Head != nil, model.F0HeadBaseBlend, model.F0HeadEnergy, model.DefaultPriority)
-	}
-}
-
-// 既定の日本語抑揚モデルv12は、v10を混ぜず、全体を-50cent下げ、v11より優先される。
+// 既定の日本語抑揚モデルv12は、基準モデルを混ぜず、全体を-50cent下げ、エネルギーヘッドでモーラの音量も変える。
 func TestBundledV12UsesHeadOnly(t *testing.T) {
 	model, err := LoadModel(filepath.Join("..", "..", "models", "frame-intonation-tcn-v12.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	v11, err := LoadModel(filepath.Join("..", "..", "models", "frame-intonation-tcn-v11.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if model.F0Head == nil || model.F0HeadBaseBlend != 0 || model.F0HeadPitchOffsetCents != -50 || !model.F0HeadEnergy || model.DefaultPriority <= v11.DefaultPriority {
+	if model.F0Head == nil || model.F0HeadBaseBlend != 0 || model.F0HeadPitchOffsetCents != -50 || !model.F0HeadEnergy || model.DefaultPriority <= 0 {
 		t.Fatalf("v12: head %v blend %v offset %v energy %v priority %d", model.F0Head != nil, model.F0HeadBaseBlend, model.F0HeadPitchOffsetCents, model.F0HeadEnergy, model.DefaultPriority)
 	}
 	if model.F0Head.F0Scale() != 0 {

@@ -68,6 +68,13 @@ func train(c config) (map[string]any, error) {
 	if e != nil {
 		return nil, e
 	}
+	// 基準モデルを埋め込んだモデルJSON（frame-intonation-tcn-v12など）なら、埋め込んだ基準モデルを使う。
+	var embedded struct {
+		BaseModelData json.RawMessage `json:"base_model_data"`
+	}
+	if e = json.Unmarshal(raw, &embedded); e == nil && len(embedded.BaseModelData) > 0 {
+		raw = embedded.BaseModelData
+	}
 	var base map[string]any
 	if e = json.Unmarshal(raw, &base); e != nil {
 		return nil, e

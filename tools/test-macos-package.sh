@@ -80,8 +80,6 @@ for required in \
   "${server_root}/utautts-server" \
   "${server_root}/runtime/utautts-world-engine.dylib" \
   "${gui_root}/models/frame-intonation-tcn-v12.json" \
-  "${gui_root}/models/frame-intonation-tcn-v11.json" \
-  "${gui_root}/models/frame-intonation-tcn-v10.json" \
   "${gui_root}/renderer/utautts-world-phrase/renderer.json"; do
   [[ -f "${required}" ]] || fail "required package file is missing: ${required}"
 done
@@ -232,7 +230,7 @@ app_binary="${app}/Contents/MacOS/utautts"
 
 smoke_text='こんにちは'
 "${cli}" --voicebank "${voicebank}" --text "${smoke_text}" \
-  --prosody frame-intonation-tcn-v10 --renderer utautts-world-phrase \
+  --prosody frame-intonation-tcn-v12 --renderer utautts-world-phrase \
   --apply-pitch --intonation-strength 1 --out "${work_dir}/utautts-world.wav"
 [[ "$(file_size "${work_dir}/utautts-world.wav")" -gt 44 ]] || fail 'synthesis output is empty'
 

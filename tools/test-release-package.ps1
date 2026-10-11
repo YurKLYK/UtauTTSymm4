@@ -358,7 +358,7 @@ try {
     $utauTTSWorldWav = Join-Path $workingDirectory 'package-utautts-world-smoke.wav'
     Push-Location $workingDirectory
     try {
-        & $cli --voicebank $voicebank.FullName --text $smokeText --prosody frame-intonation-tcn-v10 `
+        & $cli --voicebank $voicebank.FullName --text $smokeText --prosody frame-intonation-tcn-v12 `
             --renderer utautts-world-phrase --apply-pitch --intonation-strength 1 --out $utauTTSWorldWav
         if ($LASTEXITCODE -ne 0) {
             throw "Packaged UtauTTS WORLD synthesis failed with exit code $LASTEXITCODE"
@@ -448,7 +448,7 @@ try {
         $worldPitchBody = @{
             text = $smokeText
             voicebank_id = $voicebankId
-            model_id = 'frame-intonation-tcn-v10'
+            model_id = 'frame-intonation-tcn-v12'
             renderer = 'utautts-world-phrase'
             intonation_strength = 1
             apply_pitch = $true

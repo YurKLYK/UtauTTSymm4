@@ -18,16 +18,19 @@ func LoadModel(path string) (*Model, error) {
 		return nil, err
 	}
 	var head f0HeadManifest
-	if err := json.Unmarshal(data, &head); err == nil && head.BaseModel != "" {
+	if err := json.Unmarshal(data, &head); err == nil && (head.BaseModel != "" || len(head.BaseModelData) > 0) {
 		return loadF0HeadModel(path, data, head)
 	}
 	return ParseModel(data)
 }
 
-// f0HeadManifestは、基準の抑揚モデル（同じディレクトリのJSON）にF0ヘッド（統合韻律モデル）を重ねるモデルJSON。
+// f0HeadManifestは、基準の抑揚モデルにF0ヘッド（統合韻律モデル）を重ねるモデルJSON。
 // 基準モデルがアクセント特徴とモーラの予測を、F0ヘッドが自動ピッチ曲線とモーラの音量を担う。
 type f0HeadManifest struct {
+	// BaseModelは同じディレクトリにある基準モデルのJSON。BaseModelDataがあればそちらを使う。
 	BaseModel string `json:"base_model"`
+	// BaseModelDataは埋め込んだ基準モデルのJSON（基準モデルを別に配布しない場合）。
+	BaseModelData json.RawMessage `json:"base_model_data"`
 	// F0HeadはF0（とエネルギー）ヘッドを持つ時間伸縮系モデルのsafetensors（JSONではbase64）。
 	F0Head []byte `json:"f0_head"`
 	// UseEnergyはエネルギーヘッドでモーラの音量を変えるか。未指定は使う。
@@ -39,12 +42,21 @@ type f0HeadManifest struct {
 }
 
 func loadF0HeadModel(path string, data []byte, head f0HeadManifest) (*Model, error) {
-	base, err := LoadModel(filepath.Join(filepath.Dir(path), filepath.FromSlash(head.BaseModel)))
-	if err != nil {
-		return nil, fmt.Errorf("load base model %q: %w", head.BaseModel, err)
+	var base *Model
+	var err error
+	if len(head.BaseModelData) > 0 {
+		base, err = ParseModel(head.BaseModelData)
+		if err != nil {
+			return nil, fmt.Errorf("parse embedded base model: %w", err)
+		}
+	} else {
+		base, err = LoadModel(filepath.Join(filepath.Dir(path), filepath.FromSlash(head.BaseModel)))
+		if err != nil {
+			return nil, fmt.Errorf("load base model %q: %w", head.BaseModel, err)
+		}
 	}
 	if base.F0Head != nil {
-		return nil, fmt.Errorf("base model %q must not have an F0 head", head.BaseModel)
+		return nil, fmt.Errorf("base model must not have an F0 head")
 	}
 	tcn, err := speechtiming.LoadTCN(head.F0Head)
 	if err != nil {

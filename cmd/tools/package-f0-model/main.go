@@ -1,7 +1,8 @@
 // 学習した統合韻律モデル（F0ヘッド付きsafetensors）を、models/へ置けるモデルJSONにまとめる。
 // 基準の抑揚モデルがアクセント特徴とモーラの予測を担い、このモデルが自動ピッチ曲線とモーラの音量を担う。
 // ライセンス・通知・出典は基準モデルから引き継ぐ（--licenseなどで上書きできる）。
-// 使い方: go run ./cmd/tools/package-f0-model --weights out/speech-timing-target/ja-mh.safetensors --base models/frame-intonation-tcn-v10.json --id my-f0-v1 --display-name "My F0 v1" --out out/my-f0-v1.json
+// --baseには基準の抑揚モデルJSONか、基準モデルを埋め込んだモデルJSON（models/frame-intonation-tcn-v12.jsonなど）を指定する。後者は埋め込んだ基準モデルを使う。
+// 使い方: go run ./cmd/tools/package-f0-model --weights out/speech-timing-target/ja-mh.safetensors --base models/frame-intonation-tcn-v12.json --embed-base --id my-f0-v1 --display-name "My F0 v1" --out out/my-f0-v1.json
 package main
 
 import (
@@ -23,13 +24,13 @@ type options struct {
 	Weights, Base, ID, DisplayName, Description, License, Language, Out string
 	Priority                                                            int
 	BaseBlend, PitchOffsetCents                                         float64
-	UseEnergy, NaturalScale                                             bool
+	UseEnergy, NaturalScale, EmbedBase                                  bool
 }
 
 func main() {
 	var o options
 	flag.StringVar(&o.Weights, "weights", "", "F0ヘッド付きsafetensors")
-	flag.StringVar(&o.Base, "base", "", "基準の抑揚モデルJSON（出力と同じディレクトリに置くファイル名で参照する）")
+	flag.StringVar(&o.Base, "base", "", "基準の抑揚モデルJSON、または基準モデルを埋め込んだモデルJSON")
 	flag.StringVar(&o.ID, "id", "", "モデルID")
 	flag.StringVar(&o.DisplayName, "display-name", "", "表示名")
 	flag.StringVar(&o.Description, "description", "", "説明")
@@ -40,6 +41,7 @@ func main() {
 	flag.BoolVar(&o.UseEnergy, "use-energy", true, "エネルギーヘッドでモーラの音量を変える")
 	flag.Float64Var(&o.PitchOffsetCents, "pitch-offset-cents", 0, "自動ピッチ曲線全体へ足す高さ（セント）")
 	flag.BoolVar(&o.NaturalScale, "natural-scale", false, "メタデータのf0_scaleを外す（--f0-teacherに自然スケールの単位で渡した場合）")
+	flag.BoolVar(&o.EmbedBase, "embed-base", false, "基準モデルを出力JSONへ埋め込む（基準モデルを別に配布しない場合）。--baseが埋め込みのモデルなら常に埋め込む")
 	flag.StringVar(&o.Out, "out", "", "出力JSON（out/以下）")
 	flag.Parse()
 	if err := run(o); err != nil {
@@ -77,12 +79,13 @@ func run(o options) error {
 	if !head.HasF0Head() {
 		return fmt.Errorf("%s has no F0 head", o.Weights)
 	}
-	base, err := prosody.LoadModel(o.Base)
+	baseData, embedded, err := readBaseModel(o.Base)
+	if err != nil {
+		return err
+	}
+	base, err := prosody.ParseModel(baseData)
 	if err != nil {
 		return fmt.Errorf("load base model: %w", err)
-	}
-	if base.F0Head != nil {
-		return fmt.Errorf("base model must be a plain intonation model")
 	}
 	license := o.License
 	if license == "" {
@@ -92,8 +95,12 @@ func run(o options) error {
 		"id": o.ID, "display_name": o.DisplayName, "description": o.Description,
 		"license": license, "license_notices": base.LicenseNotices, "provenance": base.Provenance,
 		"language": o.Language, "default_priority": o.Priority,
-		"base_model": filepath.Base(o.Base), "f0_head": weights,
-		"base_blend": o.BaseBlend, "use_energy": o.UseEnergy,
+		"f0_head": weights, "base_blend": o.BaseBlend, "use_energy": o.UseEnergy,
+	}
+	if o.EmbedBase || embedded {
+		manifest["base_model_data"] = json.RawMessage(baseData)
+	} else {
+		manifest["base_model"] = filepath.Base(o.Base)
 	}
 	if o.PitchOffsetCents != 0 {
 		manifest["pitch_offset_cents"] = o.PitchOffsetCents
@@ -116,7 +123,11 @@ func run(o options) error {
 	if err := file.Close(); err != nil {
 		return err
 	}
-	fmt.Printf("wrote %s (base %s); place it next to the base model in models/\n", o.Out, filepath.Base(o.Base))
+	if o.EmbedBase || embedded {
+		fmt.Printf("wrote %s (base model embedded)\n", o.Out)
+	} else {
+		fmt.Printf("wrote %s (base %s); place it next to the base model in models/\n", o.Out, filepath.Base(o.Base))
+	}
 	return nil
 }
 
@@ -155,4 +166,26 @@ func withoutF0Scale(weights []byte) ([]byte, error) {
 	result := binary.LittleEndian.AppendUint64(nil, uint64(len(encoded)))
 	result = append(result, encoded...)
 	return append(result, weights[8+size:]...), nil
+}
+
+// readBaseModelは基準モデルのJSONを返す。基準モデルを埋め込んだモデルJSONなら、埋め込んだ基準モデルを返す。
+func readBaseModel(path string) ([]byte, bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, false, err
+	}
+	var manifest struct {
+		BaseModel     string          `json:"base_model"`
+		BaseModelData json.RawMessage `json:"base_model_data"`
+	}
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, false, fmt.Errorf("read base model: %w", err)
+	}
+	if len(manifest.BaseModelData) > 0 {
+		return manifest.BaseModelData, true, nil
+	}
+	if manifest.BaseModel != "" {
+		return nil, false, fmt.Errorf("base model must be a plain intonation model or embed its base model")
+	}
+	return data, false, nil
 }

@@ -12,11 +12,8 @@ UtauTTSのオリジナルコードは[`LICENSE`](./LICENSE)のMIT Licenseです�
 
 | モデル | 通知 |
 | --- | --- |
-| `frame-intonation-tcn-v12` | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt`, `licenses/MFA-Japanese-NOTICE.txt`, `licenses/IRODORI-TEACHER-NOTICE.txt` |
-| `frame-intonation-tcn-v11` | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt`, `licenses/MFA-Japanese-NOTICE.txt`, `licenses/IRODORI-TEACHER-NOTICE.txt` |
-| `frame-intonation-tcn-v10` | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt`, `licenses/MFA-Japanese-NOTICE.txt` |
+| `frame-intonation-tcn-v12`（基準モデルv10を埋め込み） | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt`, `licenses/MFA-Japanese-NOTICE.txt`, `licenses/IRODORI-TEACHER-NOTICE.txt` |
 | `speech-timing-target-v1`（bridgeへ埋め込み） | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt`, `licenses/MFA-Japanese-NOTICE.txt` |
-| `frame-intonation-tcn-v9.1-t` | `licenses/TSUKUYOMI-CORPUS.txt`, `licenses/MINNADE-JSUT-CORPUS.txt` |
 | `frame-intonation-tcn-en-v1`（CC BY 4.0） | `licenses/ENGLISH-FRAME-INTONATION-TCN-V1.txt`, `licenses/LibriTTS-R-NOTICE.txt`, `licenses/MFA-English-ARPA-NOTICE.txt`, `licenses/CC-BY-4.0.txt` |
 | `tone-intonation-zh-v1`（Apache License 2.0） | `licenses/TONE-INTONATION-ZH-V1.txt`, `licenses/AISHELL-3-NOTICE.txt`, `licenses/PADDLESPEECH-AISHELL3-ALIGNMENT-NOTICE.txt`, `licenses/APACHE-2.0.txt` |
 | `speech-timing-target-en-v1`（bridgeへ埋め込み、CC BY 4.0） | `licenses/SPEECH-TIMING-TARGET-EN-V1.txt`, `licenses/LibriTTS-R-NOTICE.txt`, `licenses/MFA-English-ARPA-NOTICE.txt`, `licenses/CC-BY-4.0.txt` |

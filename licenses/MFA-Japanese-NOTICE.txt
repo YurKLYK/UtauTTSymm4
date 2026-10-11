@@ -5,7 +5,7 @@ https://creativecommons.org/licenses/by/4.0/
 https://mfa-models.readthedocs.io/en/latest/acoustic/Japanese/Japanese%20MFA%20acoustic%20model%20v3_0_0.html
 https://github.com/MontrealCorpusTools/mfa-models
 
-Used locally to estimate phoneme boundaries for the frame-intonation-tcn-v10
-training corpora (cmd/tools/align-intonation-mfa). The acoustic model weights
+Used locally to estimate phoneme boundaries for the training corpora of
+frame-intonation-tcn-v10 (the base model embedded in frame-intonation-tcn-v12) (cmd/tools/align-intonation-mfa). The acoustic model weights
 are not bundled with the UtauTTS intonation model. Alignment results are
 converted into UtauTTS mora intervals.

@@ -4,6 +4,8 @@
 
 ## 日本語フレーム抑揚モデル（v10）
 
+v10は単体では配布せず、v12の基準モデルとしてモデルJSONに埋め込んでいます。
+
 `frame-intonation-tcn-v10` は、つくよみちゃんコーパス Vol.1 と「みんなで作る JSUT」basic5000 の音声を使い、Open JTalk のアクセント特徴と音素時刻から 10 ms ごとの F0 輪郭を学習します。入力は `version: 1` の JSONL で、各行に `id`、`text`、`audio_path`、時刻付き `tokens` を持ちます。Go トレーナーは gograd の残差 TCN を使用します。
 
 仮名読みのコーパスは、Open JTalk 由来の音素列との厳密な照合ができない場合に `--allow-reading-mismatch` を指定します。音素列を含む入力では、休止記号や長母音などを Python 版と同じ規則で正規化して照合します。
@@ -49,34 +51,25 @@ go run ./cmd/tools/train-frame-intonation `
 `.\build\qt\utautts.exe --intonation-lab` で編集したセッションを入力に、基準モデルへの手動補正を学習します。このモデルは配布されていません。
 
 ```powershell
-go run ./cmd/tools/train-manual-intonation-residual --base-model models/frame-intonation-tcn-v10.json --out out/frame-intonation-lab.json --model-id frame-intonation-lab out/lab-session.utautts
+go run ./cmd/tools/train-manual-intonation-residual --base-model models/frame-intonation-tcn-v12.json --out out/frame-intonation-lab.json --model-id frame-intonation-lab out/lab-session.utautts
 ```
 
 ## 日本語抑揚 v12（教師のF0を作り直したF0ヘッド）
 
-`frame-intonation-tcn-v12`は、v11と同じデータセットと整列で、教師のF0だけを作り直して学習します。教師はWORLD Harvest（10 ms、80〜800 Hz）で測ったF0を、最大から-40 dB以下のフレームを除き、前後150 msの中央値から600セント以上離れた値をオクターブ単位で折り返し、σ20 msで平滑化して、発話の中央値を0にしたものです。`--f0-teacher`のJSONL（`id`と`cents`）で渡します。ローダーは値を100で割るので、自然スケールの単位（log/0.3）になるよう「セント×100/519.3」で書きます。モデルJSONへまとめるときに`--natural-scale`でメタデータの`f0_scale`を外し、推論は自然スケールの経路を通します。v10の曲線は混ぜず（`--base-blend 0`）、曲線全体を50セント下げます（`--pitch-offset-cents -50`）。
+`frame-intonation-tcn-v12`のF0ヘッドは、Irodori-TTS v4.1-Small（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声とコーパスの音声から学習します。読みの照合（jsut-labelの正解の読みとOpenJTalkの読みが違う文を除く）とMFA整列のあと、作り直した教師のF0を目標に学習します。教師はWORLD Harvest（10 ms、80〜800 Hz）で測ったF0を、最大から-40 dB以下のフレームを除き、前後150 msの中央値から600セント以上離れた値をオクターブ単位で折り返し、σ20 msで平滑化して、発話の中央値を0にしたものです。`--f0-teacher`のJSONL（`id`と`cents`）で渡します。ローダーは値を100で割るので、自然スケールの単位（log/0.3）になるよう「セント×100/519.3」で書きます。モデルJSONへまとめるときに`--natural-scale`でメタデータの`f0_scale`を外し、推論は自然スケールの経路を通します。v10の曲線は混ぜず（`--base-blend 0`）、曲線全体を50セント下げます（`--pitch-offset-cents -50`）。
 
 ```powershell
 go run ./cmd/tools/train-speech-timing --dataset out/irodori-teacher/train-ird.jsonl --alignments "out/mfa-align-20261002/alignments,out/irodori-teacher/alignments-ird" --cache out/irodori-teacher/features-ird.gob --language ja --f0 --f0-teacher out/irodori-teacher/teacher-f0.jsonl --valid 300 --steps 24000 --window 1000 --batch-size 8 --f0-dilations "1 2 4 8 16 32 64 1 2 4 8 16 32 64" --plan-augment --out out/irodori-teacher/f0-v12.safetensors
-go run ./cmd/tools/package-f0-model --weights out/irodori-teacher/f0-v12.safetensors --base models/frame-intonation-tcn-v10.json --id my-f0-v12 --display-name "My F0 v12" --natural-scale --base-blend 0 --pitch-offset-cents -50 --out out/my-f0-v12.json
-```
-
-## 日本語抑揚 v11（Irodori-TTSを教師にしたF0ヘッド）
-
-`frame-intonation-tcn-v11`のF0ヘッドは、Irodori-TTS v4.1-Small（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声から学習します。読みの照合（jsut-labelの正解の読みとOpenJTalkの読みが違う文を除く）とMFA整列のあと、自然F0を目標に学習します。
-
-```powershell
-go run ./cmd/tools/train-speech-timing --dataset out/irodori-teacher/train-ird.jsonl --alignments "out/mfa-align-20261002/alignments,out/irodori-teacher/alignments-ird" --cache out/irodori-teacher/features-ird.gob --language ja --f0 --valid 300 --steps 24000 --window 1000 --batch-size 8 --f0-dilations "1 2 4 8 16 32 64 1 2 4 8 16 32 64" --plan-augment --device cuda --out out/irodori-teacher/f0.safetensors
-go run ./cmd/tools/package-f0-model --weights out/irodori-teacher/f0.safetensors --base models/frame-intonation-tcn-v10.json --id my-f0-v1 --display-name "My F0 v1" --base-blend 0.65 --out out/my-f0-v1.json
+go run ./cmd/tools/package-f0-model --weights out/irodori-teacher/f0-v12.safetensors --base models/frame-intonation-tcn-v12.json --id my-f0-v12 --display-name "My F0 v12" --natural-scale --base-blend 0 --pitch-offset-cents -50 --out out/my-f0-v12.json
 ```
 
 - `--f0-dilations`はF0ブランチの受容野。既定（1〜8×2、約±0.6秒）では文全体の抑揚を学べないため、1〜64×2（約±5秒）を使います。
 - `--plan-augment`は学習発話を合成時と同じ一定のモーラ長（120ms±15、休止180ms）へ並べ直し、F0目標をモーラごとに伸縮した複製を学習へ足します。合成時はプラン時間で推論するため、これが無いと自然時間との差で精度が大きく落ちます（検証のプラン時間の相関 0.59→0.75）。
 - 検証では、発話ごとのF0の相関を自然時間（`f0r`）とプラン時間（`f0r_plan`）で表示します。試聴前の比較に使います。
 - `--f0-position`（文内の位置の特徴）は効果が無かったため既定では使いません。
-- v11は基準モデルv10の曲線を0.65混ぜ（`--base-blend`、JSONの`base_blend`）、エネルギーヘッドでモーラの音量も変えます（`--use-energy`、既定true）。同じ文の教師のモーラ長を使う上限確認でも長さは選ばれなかったため、モーラ長は規則のままです。
+- `--base-blend`は基準モデルの曲線を混ぜる重み（JSONの`base_blend`）、`--use-energy`はエネルギーヘッドでモーラの音量も変えるか（既定true）です。同じ文の教師のモーラ長を使う上限確認でも長さは選ばれなかったため、モーラ長は規則のままです。
 
-`package-f0-model`は学習した重みをモデルJSONにまとめます。モデルJSONは`base_model`（同じディレクトリの基準の抑揚モデル）と`f0_head`（safetensorsのbase64）を持ち、ライセンス・通知・出典は基準モデルから引き継ぎます。既存の抑揚モデルの輪郭を教師にする蒸留（`cmd/tools/prosody-teacher`と`--f0-teacher`）にも対応しますが、同梱モデルには使っていません。
+`package-f0-model`は学習した重みをモデルJSONにまとめます。モデルJSONは基準の抑揚モデル（`--embed-base`または埋め込みのモデルを`--base`に指定した場合は`base_model_data`に埋め込み、それ以外は同じディレクトリのファイルを`base_model`で参照）と`f0_head`（safetensorsのbase64）を持ち、ライセンス・通知・出典は基準モデルから引き継ぎます。既存の抑揚モデルの輪郭を教師にする蒸留（`cmd/tools/prosody-teacher`と`--f0-teacher`）にも対応しますが、同梱モデルには使っていません。
 
 ## 英語フレーム抑揚モデル
 

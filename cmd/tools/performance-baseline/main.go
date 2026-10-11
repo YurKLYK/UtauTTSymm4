@@ -47,7 +47,7 @@ func run() error {
 	outFlag := flag.String("out", "", "new output directory")
 	voicebankFlag := flag.String("voicebank", "", "voicebank directory")
 	corpusFlag := flag.String("corpus", "tools/evaluation/japanese-v1.json", "corpus JSON")
-	modelFlag := flag.String("model", "models/frame-intonation-tcn-v10.json", "prosody model JSON")
+	modelFlag := flag.String("model", "models/frame-intonation-tcn-v12.json", "prosody model JSON")
 	count := flag.Int("count", 5, "benchmark count")
 	repeat := flag.Int("repeat", 3, "synthesis repeat")
 	benchtime := flag.String("benchtime", "200ms", "benchmark time")

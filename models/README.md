@@ -4,41 +4,17 @@
 
 ## 同梱モデル
 
-日本語の既定モデル: `frame-intonation-tcn-v12`。代替: `frame-intonation-tcn-v11`、`frame-intonation-tcn-v10`、`frame-intonation-tcn-v9.1-t`。英語の既定モデル: `frame-intonation-tcn-en-v1`。中国語の既定モデル: `tone-intonation-zh-v1`。学習と評価: [モデルの学習](../docs/model-training.md)
+日本語の既定モデル: `frame-intonation-tcn-v12`。英語の既定モデル: `frame-intonation-tcn-en-v1`。中国語の既定モデル: `tone-intonation-zh-v1`。学習と評価: [モデルの学習](../docs/model-training.md)
 
-`frame-intonation-tcn-v10`と`frame-intonation-tcn-v9.1-t`は10ms単位の相対ピッチだけを予測します。モーラ長はGUIで指定した基準値と、言語別の時間規則（「ん」0.9倍、「ー」1.2倍など）で決めます。
+抑揚モデルはモーラ長を予測しません。モーラ長はGUIで指定した基準値と、言語別の時間規則（「ん」0.9倍、「ー」1.2倍など）で決めます。
 
 ## Frame Intonation TCN v12（既定）
 
-`frame-intonation-tcn-v12`は、v11と同じ[Irodori-TTS](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)（MIT）の読み上げとコーパスの音声から、F0ヘッドを学び直したモデルです。教師のF0は、オクターブの誤推定を前後の値に合わせて折り返し、音量の小さいフレームを除いて作り直しています。v10の曲線は混ぜず、F0ヘッドの曲線だけを自然の振れ幅で使い、曲線全体を50セント下げます。アクセント特徴とモーラの予測はv10が行い、同じモデルのエネルギーヘッドでモーラの音量（0.75〜1.3倍）も変えます。試聴でv11より自然と判断し、既定にしました。
+`frame-intonation-tcn-v12`は、[Irodori-TTS](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声と、コーパスの音声から学習したF0ヘッドのモデルです。教師のF0は、オクターブの誤推定を前後の値に合わせて折り返し、音量の小さいフレームを除いて作り直しています。v10の曲線は混ぜず、F0ヘッドの曲線だけを自然の振れ幅で使い、曲線全体を50セント下げます。アクセント特徴とモーラの予測には、[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600で学習した基準モデル（v10）を使います。基準モデルは別のファイルにせず、モデルJSONに埋め込んでいます。同じモデルのエネルギーヘッドでモーラの音量（0.75〜1.3倍）も変えます。試聴で以前の既定（v11）より自然と判断し、既定にしました。
 
 - 本モデルは相対ピッチ（抑揚）のみを学習し、話者の声質を意図的に再現しません
 - 重みはMIT Licenseで配布します。教師の音声・台本・音声合成モデルは再配布しません
 - 通知: [licenses/TSUKUYOMI-CORPUS.txt](../licenses/TSUKUYOMI-CORPUS.txt)、[licenses/MINNADE-JSUT-CORPUS.txt](../licenses/MINNADE-JSUT-CORPUS.txt)、[licenses/MFA-Japanese-NOTICE.txt](../licenses/MFA-Japanese-NOTICE.txt)、[licenses/IRODORI-TEACHER-NOTICE.txt](../licenses/IRODORI-TEACHER-NOTICE.txt)
-
-## Frame Intonation TCN v11（代替）
-
-`frame-intonation-tcn-v11`は、`frame-intonation-tcn-v10`の抑揚曲線（重み0.65）と、[Irodori-TTS](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)（MIT）にBASIC5000とUtauTTS用の日常文を読ませた音声で学習したF0ヘッドの曲線（0.35）を混ぜます。アクセント特徴とモーラの予測はv10が行います。F0ヘッドは合成時と同じ一定のモーラ長に並べ直した複製も使い、文全体（約±5秒）を見て学習しています。同じモデルのエネルギーヘッドでモーラの音量（0.75〜1.3倍）も変えます。聴取では、混合した曲線が15文中7文でv10より選ばれ（v10が4文、同程度が4文）、音量を変える版は変えない版に対して10対5で選ばれました。
-
-- 本モデルは相対ピッチ（抑揚）のみを学習し、話者の声質を意図的に再現しません
-- 重みはMIT Licenseで配布します。教師の音声・台本・音声合成モデルは再配布しません
-- 通知: [licenses/TSUKUYOMI-CORPUS.txt](../licenses/TSUKUYOMI-CORPUS.txt)、[licenses/MINNADE-JSUT-CORPUS.txt](../licenses/MINNADE-JSUT-CORPUS.txt)、[licenses/MFA-Japanese-NOTICE.txt](../licenses/MFA-Japanese-NOTICE.txt)、[licenses/IRODORI-TEACHER-NOTICE.txt](../licenses/IRODORI-TEACHER-NOTICE.txt)
-
-## v10 Tsukuyomi + JSUT（代替）
-
-`frame-intonation-tcn-v10`は、v9.1と同じ[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600を、Montreal Forced Aligner（`japanese_mfa`）で合成時と同じモーラ区間に整列して学習したモデルです。v9.1のアクセントViterbi整列ではモーラ境界が大きくずれており、合成時の抑揚が約90ms早くなっていました。
-
-- 本モデルはフレーム単位の相対ピッチ（抑揚）のみを学習し、話者の声質を意図的に再現しません
-- 重みはMIT Licenseで配布します。学習元コーパスの利用条件は、配布元が公開する原文に従います。UtauTTSはコーパスの音声・台本とMFA整列モデルを再配布しません
-- 通知: [licenses/TSUKUYOMI-CORPUS.txt](../licenses/TSUKUYOMI-CORPUS.txt)、[licenses/MINNADE-JSUT-CORPUS.txt](../licenses/MINNADE-JSUT-CORPUS.txt)、[licenses/MFA-Japanese-NOTICE.txt](../licenses/MFA-Japanese-NOTICE.txt)
-
-## v9.1 Tsukuyomi + JSUT（代替）
-
-`frame-intonation-tcn-v9.1-t`は、[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600で学習したモデルです。みんなで作るJSUTは、複数の話者の録音を集めたコーパスです。
-
-- 本モデルはフレーム単位の相対ピッチ（抑揚）のみを学習し、話者の声質を意図的に再現しません
-- 重みはMIT Licenseで配布します。学習元コーパスの利用条件は、配布元が公開する原文に従います。UtauTTSはコーパスの音声・台本を再配布しません
-- 通知: [licenses/TSUKUYOMI-CORPUS.txt](../licenses/TSUKUYOMI-CORPUS.txt)、[licenses/MINNADE-JSUT-CORPUS.txt](../licenses/MINNADE-JSUT-CORPUS.txt)
 
 ## English Frame Intonation TCN v1（英語の既定）
 
@@ -64,7 +40,7 @@ Delta/VCCVの音節構成を対象とし、en-cv/en-arpasingへの適用は未�
 
 ## Speech Timing Target v1（日本語の時間伸縮）
 
-`speech-timing-target-v1`は、`utautts-world-phrase`の日本語出力をモーラの中だけ時間伸縮するための目標モデルです（`internal/speechtiming/speech-timing-target-v1.safetensors`、bridgeに埋め込み）。抑揚モデルv10と同じ[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600を、Montreal Forced Aligner（`japanese_mfa`）で整列して学習しました。
+`speech-timing-target-v1`は、`utautts-world-phrase`の日本語出力をモーラの中だけ時間伸縮するための目標モデルです（`internal/speechtiming/speech-timing-target-v1.safetensors`、bridgeに埋め込み）。v12の基準モデル（v10）と同じ[つくよみちゃんコーパス Vol.1 声優統計コーパス（JVSコーパス準拠）](https://tyc.rei-yumesaki.net/material/corpus/)（CV.夢前黎）と[みんなで作るJSUTコーパスbasic5000](https://tyc.rei-yumesaki.net/material/minnade-jsut/)のBASIC5000_0001-0600を、Montreal Forced Aligner（`japanese_mfa`）で整列して学習しました。
 
 - 本モデルは発話ごとに正規化した包絡の動き（音の移り方の時間配分）だけを合成に使い、予測した包絡そのものや話者の声質は出力に含めません
 - 重みはMIT Licenseで配布します。学習元コーパスの利用条件は、配布元が公開する原文に従います。UtauTTSはコーパスの音声・台本とMFA整列モデルを再配布しません

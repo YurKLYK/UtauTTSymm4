@@ -378,12 +378,12 @@ MIT License. They were trained on third-party corpora, and UtauTTS does not
 bundle or redistribute the corpus audio or scripts. The applicable notices are
 included in the package under licenses/ (model-to-notice mapping:
 models/README.md): licenses/TSUKUYOMI-CORPUS.txt and
-licenses/MINNADE-JSUT-CORPUS.txt. The frame-intonation-tcn-v10 training data
-was aligned locally with the Montreal Forced Aligner Japanese MFA acoustic
+licenses/MINNADE-JSUT-CORPUS.txt. The training data of the base model
+(frame-intonation-tcn-v10, embedded in frame-intonation-tcn-v12) was aligned locally with the Montreal Forced Aligner Japanese MFA acoustic
 model (CC BY 4.0), which is not bundled; see licenses/MFA-Japanese-NOTICE.txt.
 
-The F0 heads of frame-intonation-tcn-v12 (the default Japanese model) and
-frame-intonation-tcn-v11 were also trained on relative pitch measured from speech that UtauTTS generated locally
+The F0 head of frame-intonation-tcn-v12 (the default Japanese model) was also
+trained on relative pitch measured from speech that UtauTTS generated locally
 with Irodori-TTS v4.1-Small (MIT License); the generated audio, scripts and
 the text-to-speech model are not bundled. See
 licenses/IRODORI-TEACHER-NOTICE.txt.
@@ -391,7 +391,7 @@ licenses/IRODORI-TEACHER-NOTICE.txt.
 The speech-timing-target-v1 weights (internal/speechtiming, embedded in the
 WORLD bridge) are UtauTTS weights distributed under the MIT License. They were
 trained on the same Tsukuyomi-chan Corpus Vol.1 and Minnade JSUT basic5000
-BASIC5000_0001-0600 data as frame-intonation-tcn-v10 with the same notices
+BASIC5000_0001-0600 data as the base model of frame-intonation-tcn-v12 with the same notices
 (licenses/TSUKUYOMI-CORPUS.txt, licenses/MINNADE-JSUT-CORPUS.txt and
 licenses/MFA-Japanese-NOTICE.txt). Only normalized envelope movement is used to
 retime the voicebank output; no corpus audio or predicted envelope is rendered.

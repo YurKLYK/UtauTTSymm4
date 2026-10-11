@@ -23,6 +23,8 @@ Copy-Item -LiteralPath (Join-Path $goroot 'lib/wasm/wasm_exec.js') -Destination 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'fs-shim.js') -Destination $dist -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'openjtalk-bridge.js') -Destination $dist -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'world-bridge.js') -Destination $dist -Force
+# 同梱から外したモデルが前回のビルドから残らないよう、先に消す。
+Get-ChildItem -Path (Join-Path $dist 'models') -Filter *.json -File | Remove-Item -Force
 $modelFiles = Get-ChildItem -Path (Join-Path $root 'models') -Filter *.json -File
 foreach ($modelFile in $modelFiles) {
     Copy-Item -LiteralPath $modelFile.FullName -Destination (Join-Path $dist 'models') -Force

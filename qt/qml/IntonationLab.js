@@ -7,7 +7,7 @@ function defaultFile(ctx) {
 }
 
 function baseModelPath() {
-    return "models/frame-intonation-tcn-v10.json";
+    return "models/frame-intonation-tcn-v12.json";
 }
 
 function firstIncomplete(ctx) {

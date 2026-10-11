@@ -18,6 +18,8 @@ cp "${goroot}/lib/wasm/wasm_exec.js" "${dist}/wasm_exec.js"
 cp "${script_dir}/fs-shim.js" "${dist}/fs-shim.js"
 cp "${script_dir}/openjtalk-bridge.js" "${dist}/openjtalk-bridge.js"
 cp "${script_dir}/world-bridge.js" "${dist}/world-bridge.js"
+# 同梱から外したモデルが前回のビルドから残らないよう、先に消す。
+rm -f "${dist}/models/"*.json
 cp "${root_dir}/models/"*.json "${dist}/models/"
 {
     printf '{"models":['

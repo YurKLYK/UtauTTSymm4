@@ -1,6 +1,6 @@
 // 抑揚モデルのランタイム輪郭（平滑化・クリップ込み）を、コーパスの自然時間軸で生成する。
 // 統合韻律モデルの蒸留教師用。リポジトリ直下で実行する。
-// 使い方: go run ./cmd/tools/prosody-teacher --dataset out/mfa-align-20261002/all-mfa.jsonl --model models/frame-intonation-tcn-v10.json --out out/speech-timing-target/ja-v10-teacher.jsonl
+// 使い方: go run ./cmd/tools/prosody-teacher --dataset out/mfa-align-20261002/all-mfa.jsonl --model models/frame-intonation-tcn-v12.json --out out/speech-timing-target/ja-teacher.jsonl
 package main
 
 import (
@@ -96,7 +96,7 @@ type teacherLine struct {
 
 func main() {
 	dataset := flag.String("dataset", "out/mfa-align-20261002/all-mfa.jsonl", "corpus JSONL")
-	modelPath := flag.String("model", "models/frame-intonation-tcn-v10.json", "prosody model JSON")
+	modelPath := flag.String("model", "models/frame-intonation-tcn-v12.json", "prosody model JSON")
 	outPath := flag.String("out", "out/speech-timing-target/ja-v10-teacher.jsonl", "teacher output JSONL")
 	flag.Parse()
 

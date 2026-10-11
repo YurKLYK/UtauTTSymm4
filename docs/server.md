@@ -135,7 +135,7 @@ ID順にソートされた音源一覧です。
   "models": [
     {
       "id": "frame-intonation-tcn-v12",
-      "display_name": "Frame Intonation TCN v11",
+      "display_name": "Frame Intonation TCN v12",
       "description": "...",
       "language": "ja",
       "path": "C:\\...\\models\\frame-intonation-tcn-v12.json",
