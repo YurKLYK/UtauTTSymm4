@@ -1,3 +1,7 @@
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --vp-c-brand-1: #c24e5a;
   --vp-c-brand-2: #d35f6b;
