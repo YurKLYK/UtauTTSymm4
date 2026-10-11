@@ -154,10 +154,18 @@ MenuBar {
                 onObjectRemoved: (index, object) => voicebankMenu.removeItem(object)
             }
         }
-        MenuSeparator {}
-        GrayscaleMenuItem {
-            text: root.host.translator.tr("menu.file.quit")
-            onTriggered: Qt.quit()
+        MenuSeparator {
+            visible: Platform.isDesktop
+            height: visible ? implicitHeight : 0
+        }
+        Instantiator {
+            model: Platform.isDesktop ? 1 : 0
+            delegate: GrayscaleMenuItem {
+                text: root.host.translator.tr("menu.file.quit")
+                onTriggered: Qt.quit()
+            }
+            onObjectAdded: (index, object) => fileMenu.addItem(object)
+            onObjectRemoved: (index, object) => fileMenu.removeItem(object)
         }
     }
     Menu {
