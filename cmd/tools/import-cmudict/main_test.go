@@ -15,6 +15,8 @@ func TestGenerateWritesDictionaryAndNotices(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is unavailable")
 	}
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	checkout := t.TempDir()
 	dictionary := "hello HH AH0 L OW1\n"
 	writeFile(t, filepath.Join(checkout, "cmudict.dict"), dictionary)

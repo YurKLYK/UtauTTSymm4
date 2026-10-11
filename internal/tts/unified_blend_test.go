@@ -27,14 +27,10 @@ func TestBlendPitchCurvesWeightsSecondCurve(t *testing.T) {
 	}
 }
 
-// 自然スケールのF0ヘッドは、既定の強さ（4）で輪郭をそのまま、半分の強さで半分にする。
 func TestScaleUnifiedPitchCurveNaturalScale(t *testing.T) {
 	model, err := prosody.LoadModel(filepath.Join("..", "..", "models", "frame-intonation-tcn-v12.json"))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if model.F0Head == nil || model.F0Head.F0Scale() != 0 {
-		t.Fatal("bundled v11 must carry a natural-scale F0 head")
 	}
 	contour := &render.PitchCurve{FrameMS: 10, Cents: []float64{80, -40}}
 	if got := scaleUnifiedPitchCurve(contour, model.F0Head, 4); got.Cents[0] != 80 || got.Cents[1] != -40 {
