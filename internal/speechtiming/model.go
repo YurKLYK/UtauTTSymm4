@@ -33,7 +33,6 @@ var embeddedEnglishTarget []byte
 //go:embed speech-timing-target-zh-v1.safetensors
 var embeddedChineseTarget []byte
 
-// modelCacheは埋め込みモデルを一度だけ読み込む。
 type modelCache struct {
 	once  sync.Once
 	model *TCN
@@ -159,7 +158,6 @@ type TCN struct {
 	energyB   tensor
 }
 
-// モデル構成はsafetensorsの__metadata__から読む。
 func LoadTCN(data []byte) (*TCN, error) {
 	tensors, metadata, err := readSafeTensors(data)
 	if err != nil {
@@ -236,7 +234,7 @@ func LoadTCN(data []byte) (*TCN, error) {
 	}
 	model.mels = model.outW.shape[0]
 	if metadata["f0"] == "1" {
-		if err := model.loadF0Head(tensors, metadata, get, kernel); err != nil {
+		if err := model.loadF0Head(metadata, get, kernel); err != nil {
 			return nil, err
 		}
 	}
@@ -259,7 +257,7 @@ func LoadTCN(data []byte) (*TCN, error) {
 }
 
 // loadF0HeadはF0入力を持たないF0ブランチを読む。
-func (m *TCN) loadF0Head(tensors map[string]tensor, metadata map[string]string, get func(string, int) (tensor, error), kernel int) error {
+func (m *TCN) loadF0Head(metadata map[string]string, get func(string, int) (tensor, error), kernel int) error {
 	m.hasF0 = true
 	context, err := strconv.Atoi(metadata["f0_context"])
 	if err != nil || context < 1 {
@@ -413,19 +411,23 @@ func (m *TCN) PredictF0(ids [][3]int, cont [][]float32) ([]float32, error) {
 	return pointwise(h, frames, m.hidden, m.f0OutW.data, m.f0OutB.data, 1), nil
 }
 
-// PredictEnergyは文脈トランクのエネルギーヘッドでフレームごとの中心化dB/10を予測する。
-func (m *TCN) PredictEnergy(ids [][3]int, cont [][]float32) ([]float32, error) {
-	if !m.hasEnergy {
-		return nil, fmt.Errorf("speech timing model: no energy head")
+// PredictProsodyは共通トランクを一度だけ実行し、相対log F0（/0.3）と中心化dB/10を返す。
+// エネルギーヘッドがないモデルではenergyはnil。
+func (m *TCN) PredictProsody(ids [][3]int, cont [][]float32) (f0, energy []float32, err error) {
+	if !m.hasF0 {
+		return nil, nil, fmt.Errorf("speech timing model: no F0 head")
 	}
 	h, frames, err := m.predictContextTrunk(ids, cont)
 	if err != nil || frames == 0 {
-		return nil, err
+		return nil, nil, err
 	}
-	return pointwise(h, frames, m.hidden, m.energyW.data, m.energyB.data, 1), nil
+	f0 = pointwise(h, frames, m.hidden, m.f0OutW.data, m.f0OutB.data, 1)
+	if m.hasEnergy {
+		energy = pointwise(h, frames, m.hidden, m.energyW.data, m.energyB.data, 1)
+	}
+	return f0, energy, nil
 }
 
-// predictContextTrunkはF0・エネルギー共通の文脈トランクを実行する。
 func (m *TCN) predictContextTrunk(ids [][3]int, cont [][]float32) ([]float32, int, error) {
 	frames := len(ids)
 	if len(cont) != frames {
@@ -453,7 +455,6 @@ func (m *TCN) predictContextTrunk(ids [][3]int, cont [][]float32) ([]float32, in
 	return h, frames, nil
 }
 
-// runTrunkは入力射影と残差ブロックを適用し、最終隠れ状態を返す。
 func (m *TCN) runTrunk(x []float32, frames, inputs int, inW, inB tensor, blockW, blockB, normG, normB []tensor, dilations []int, kernel int) []float32 {
 	h := pointwise(x, frames, inputs, inW.data, inB.data, m.hidden)
 	y := make([]float32, frames*m.hidden)

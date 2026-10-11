@@ -287,7 +287,7 @@ func (model *EnglishIntonationModel) predictContour(morae []frontend.Mora, timin
 		}
 		values[frame] = value
 	}
-	values = smoothFramePitchPhrases(values, speech, model.FrameMS, model.SmoothingMS)
+	values = SmoothPitchPhrases(values, speech, model.FrameMS, model.SmoothingMS)
 	voiced := make([]float64, 0, count)
 	for index, value := range values {
 		if speech[index] {
@@ -477,7 +477,7 @@ func (m *Model) PredictFrameContour(morae []frontend.Mora, frames []FeatureFrame
 		if smoothingMS <= 0 {
 			smoothingMS = 20
 		}
-		values = smoothFramePitchPhrases(values, speech, model.FrameMS, smoothingMS)
+		values = SmoothPitchPhrases(values, speech, model.FrameMS, smoothingMS)
 	}
 	for position := range values {
 		if speech[position] {
@@ -489,21 +489,11 @@ func (m *Model) PredictFrameContour(morae []frontend.Mora, frames []FeatureFrame
 		if p99 <= 0 {
 			p99 = 75
 		}
-		if observed := absolutePercentile(values, speech, 0.99); observed > p99 {
-			gain := p99 / observed
-			for position := range values {
-				if speech[position] {
-					values[position] *= gain
-				}
-			}
-		}
 		maximum := model.RenderMaxCents
 		if maximum <= 0 {
 			maximum = 90
 		}
-		for position := range values {
-			values[position] = clamp(values[position], -maximum, maximum)
-		}
+		ClipPitchContour(values, speech, p99, maximum)
 	}
 	for position := range values {
 		values[position] = clamp(values[position], model.LowCents, model.HighCents)

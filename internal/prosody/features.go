@@ -14,7 +14,8 @@ func smoothstep01(value float64) float64 {
 	return value * value * (3 - 2*value)
 }
 
-func smoothFramePitchPhrases(values []float64, speech []bool, frameMS, sigmaMS float64) []float64 {
+// SmoothPitchPhrasesは休止をまたがずにGaussian平滑化する。
+func SmoothPitchPhrases(values []float64, speech []bool, frameMS, sigmaMS float64) []float64 {
 	result := append([]float64(nil), values...)
 	if frameMS <= 0 || sigmaMS <= 0 || len(values) != len(speech) {
 		return result
@@ -47,6 +48,22 @@ func smoothFramePitchPhrases(values []float64, speech []bool, frameMS, sigmaMS f
 		start = end
 	}
 	return result
+}
+
+// ClipPitchContourは発話区間のp99をそろえ、全フレームをmaximum以内に制限する。
+// valuesは呼び出し側が所有する配列。
+func ClipPitchContour(values []float64, speech []bool, p99, maximum float64) {
+	if observed := absolutePercentile(values, speech, 0.99); observed > p99 && observed > 0 {
+		gain := p99 / observed
+		for index := range values {
+			if index < len(speech) && speech[index] {
+				values[index] *= gain
+			}
+		}
+	}
+	for index := range values {
+		values[index] = clamp(values[index], -maximum, maximum)
+	}
 }
 
 func absolutePercentile(values []float64, mask []bool, quantile float64) float64 {

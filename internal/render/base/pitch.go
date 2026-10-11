@@ -61,16 +61,15 @@ func EstimateUnitPitch(unit plan.Unit, mono *audio.PCM) (float64, error) {
 	}
 	globalUnitPitchCache.Unlock()
 
-	trimmed, err := audio.TrimPCM(mono, unit.OffsetMS, unit.CutoffMS)
+	trimStart, trimEnd, err := audio.TrimFrames(mono, unit.OffsetMS, unit.CutoffMS)
 	if err != nil {
 		return 0, err
 	}
-	wave := pcmFloats(trimmed.Data)
-	start := min(len(wave), msToFrames(unit.ConsonantMS, mono.SampleRate))
-	end := min(len(wave), start+msToFrames(180, mono.SampleRate))
+	start := trimStart + min(trimEnd-trimStart, msToFrames(unit.ConsonantMS, mono.SampleRate))
+	end := min(trimEnd, start+msToFrames(180, mono.SampleRate))
 	value := 0.0
 	if end-start >= msToFrames(30, mono.SampleRate) {
-		value = pitch.EstimateMedian(wave[start:end], mono.SampleRate)
+		value = pitch.EstimateMedian(pcmFloats(mono.Data[start:end]), mono.SampleRate)
 	}
 
 	globalUnitPitchCache.Lock()

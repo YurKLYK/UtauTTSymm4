@@ -29,8 +29,15 @@ func resolveSynthesisPitch(cfg Config, profile languageProfile, loadedProsody *p
 			}
 		}
 	}
-	if pitchCurve == nil && applyPitchEnabled(cfg) && rendererSupportsFramePitch(cfg.RendererCapabilities) {
-		pitchCurve = f0HeadPitchCurve(cfg, loadedProsody, language, morae, prosodyFeatures, curveTimings, curveDurationMS, synthesisPlan)
+	predictFramePitch := pitchCurve == nil && applyPitchEnabled(cfg) && rendererSupportsFramePitch(cfg.RendererCapabilities)
+	f0Head := unifiedF0Head(loadedProsody)
+	predictEnergy := f0Head != nil && loadedProsody.F0HeadEnergy && !cfg.ProsodyPitchOnly
+	var unified unifiedProsodyPrediction
+	if f0Head != nil && (predictFramePitch || predictEnergy) {
+		unified = predictUnifiedProsody(f0Head, language, prosodyFeatures, curveTimings, curveDurationMS, synthesisPlan, finalPhraseIsQuestion(cfg.Text), predictEnergy)
+	}
+	if predictFramePitch {
+		pitchCurve = f0HeadPitchCurve(cfg, loadedProsody, morae, prosodyFeatures, curveTimings, curveDurationMS, unified.contour)
 		if pitchCurve == nil && shouldPredictFrameContour(cfg, loadedProsody) {
 			question := finalPhraseIsQuestion(cfg.Text)
 			if contour := loadedProsody.PredictFrameContour(morae, prosodyFeatures, curveTimings, curveDurationMS, question); contour != nil {
@@ -39,9 +46,7 @@ func resolveSynthesisPitch(cfg Config, profile languageProfile, loadedProsody *p
 			}
 		}
 	}
-	if f0Head := unifiedF0Head(loadedProsody); f0Head != nil && loadedProsody.F0HeadEnergy {
-		applyUnifiedProsodyEnergy(f0Head, language, prosodyFeatures, curveTimings, curveDurationMS, synthesisPlan, finalPhraseIsQuestion(cfg.Text))
-	}
+	unified.applyEnergy(f0Head, synthesisPlan)
 	// 境界音調は自動輪郭だけに加える。
 	if cfg.PitchCurve == nil {
 		pitchCurve = profile.ApplyBoundaryTone(cfg, pitchCurve, finalPhraseEndMS(morae, curveTimings), finalPhraseIsQuestion(cfg.Text))
@@ -58,20 +63,14 @@ func resolveSynthesisPitch(cfg Config, profile languageProfile, loadedProsody *p
 	return synthesisPitch{Curve: pitchCurve, Automatic: automaticPitchCurve, Apply: applyPitch, RendererStrength: intonationStrength}, nil
 }
 
-// f0HeadPitchCurveはF0ヘッドの自動ピッチ曲線を返す。基準モデルとの混合と高さの補正もここで行う。F0ヘッドが無ければnil。
-func f0HeadPitchCurve(cfg Config, loadedProsody *prosody.Model, language string, morae []frontend.Mora, prosodyFeatures []prosody.FeatureFrame, timings []prosody.MoraTiming, durationMS float64, synthesisPlan *plan.Plan) *render.PitchCurve {
-	f0Head := unifiedF0Head(loadedProsody)
-	if f0Head == nil {
-		return nil
-	}
-	question := finalPhraseIsQuestion(cfg.Text)
-	contour := unifiedProsodyContour(f0Head, language, prosodyFeatures, timings, durationMS, synthesisPlan, question)
+// F0ヘッドの曲線へ強さ、基準モデルとの混合、高さの補正を適用する。
+func f0HeadPitchCurve(cfg Config, loadedProsody *prosody.Model, morae []frontend.Mora, prosodyFeatures []prosody.FeatureFrame, timings []prosody.MoraTiming, durationMS float64, contour *render.PitchCurve) *render.PitchCurve {
 	if contour == nil {
 		return nil
 	}
-	curve := scaleUnifiedPitchCurve(contour, f0Head, cfg.IntonationStrength)
+	curve := scaleUnifiedPitchCurve(contour, loadedProsody.F0Head, cfg.IntonationStrength)
 	if weight := loadedProsody.F0HeadBaseBlend; curve != nil && weight > 0 && shouldPredictFrameContour(cfg, loadedProsody) {
-		if base := loadedProsody.PredictFrameContour(morae, prosodyFeatures, timings, durationMS, question); base != nil {
+		if base := loadedProsody.PredictFrameContour(morae, prosodyFeatures, timings, durationMS, finalPhraseIsQuestion(cfg.Text)); base != nil {
 			baseCurve := scaleAutomaticPitchCurve(&render.PitchCurve{FrameMS: base.FrameMS, Cents: base.Cents}, cfg.IntonationStrength)
 			curve = blendPitchCurves(curve, baseCurve, weight)
 		}

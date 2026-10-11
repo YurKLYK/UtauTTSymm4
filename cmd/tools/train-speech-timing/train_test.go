@@ -201,7 +201,7 @@ func verifyRuntime(t *testing.T, modelPath, fixturePath string) {
 		for i, row := range fixture.F0Cont {
 			cont[i] = row[:]
 		}
-		f0Values, err := model.PredictF0(fixture.IDs, cont)
+		f0Values, energyValues, err := model.PredictProsody(fixture.IDs, cont)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -220,10 +220,6 @@ func verifyRuntime(t *testing.T, modelPath, fixturePath string) {
 			t.Fatalf("runtime f0 predictions differ from best model: %g", f0Maximum)
 		}
 		if len(fixture.EnergyOutput) > 0 {
-			energyValues, err := model.PredictEnergy(fixture.IDs, cont)
-			if err != nil {
-				t.Fatal(err)
-			}
 			if len(energyValues) != len(fixture.EnergyOutput) {
 				t.Fatalf("runtime energy frames %d != %d", len(energyValues), len(fixture.EnergyOutput))
 			}

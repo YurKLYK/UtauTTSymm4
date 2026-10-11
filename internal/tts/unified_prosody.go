@@ -1,13 +1,8 @@
 package tts
 
-// 統合韻律モデル（メル＋F0＋エネルギー）の適用。
-// F0ヘッドの輪郭を自動ピッチ曲線に、エネルギーヘッドの値をプランのEnergyFactorに使う。
-// モデルはinternal/speechtimingへ埋め込む。
-
 import (
 	"fmt"
 	"math"
-	"sort"
 
 	"utautts/internal/frontend"
 	"utautts/internal/plan"
@@ -42,8 +37,7 @@ func unifiedProsodyAccentVector(frame prosody.FeatureFrame) [12]float32 {
 	}
 }
 
-// scaleUnifiedPitchCurveはF0ヘッドの輪郭へ抑揚の強さを掛ける。蒸留モデル（f0_scaleあり）は従来の抑揚モデルと同じ拡大を使い、
-// 自然スケールのモデルは既定の強さで自然の振れ幅になるよう、強さ/既定の強さを一律に掛ける。
+// 自然スケールは強さ/既定値で拡大し、蒸留モデルは従来の拡大方式を使う。
 func scaleUnifiedPitchCurve(contour *render.PitchCurve, model *speechtiming.TCN, strength float64) *render.PitchCurve {
 	if model.F0Scale() > 0 {
 		return scaleAutomaticPitchCurve(contour, strength)
@@ -59,7 +53,7 @@ func scaleUnifiedPitchCurve(contour *render.PitchCurve, model *speechtiming.TCN,
 	return result
 }
 
-// blendPitchCurvesは2つの輪郭をフレームごとに混ぜる（weightは2つ目の重み）。長さが違えば短い方に合わせる。
+// weightはbの重み。bより後ろのフレームはaの値を保つ。
 func blendPitchCurves(a, b *render.PitchCurve, weight float64) *render.PitchCurve {
 	if a == nil || b == nil || a.FrameMS != b.FrameMS {
 		return a
@@ -122,12 +116,10 @@ func positionRatio(index, count int) float32 {
 	return float32(index) / float32(count-1)
 }
 
-// unifiedProsodyExtraVectorはアクセント12＋POS one-hot＋pos_group1 one-hotを組む。
-func unifiedProsodyExtraVector(frame prosody.FeatureFrame, model *speechtiming.TCN) []float32 {
-	extra := make([]float32, model.F0Context()-2)
+func unifiedProsodyExtraVector(frame prosody.FeatureFrame, width int, pos, groups []string) []float32 {
+	extra := make([]float32, width)
 	accent := unifiedProsodyAccentVector(frame)
 	copy(extra[:12], accent[:])
-	pos := model.PosVocab()
 	posIndex := len(pos)
 	for index, name := range pos {
 		if frame["pos="+name] != 0 {
@@ -136,7 +128,6 @@ func unifiedProsodyExtraVector(frame prosody.FeatureFrame, model *speechtiming.T
 		}
 	}
 	extra[12+posIndex] = 1
-	groups := model.PosGroup1Vocab()
 	groupIndex := len(groups)
 	for index, name := range groups {
 		if frame["pos_group1="+name] != 0 {
@@ -182,10 +173,11 @@ func unifiedProsodyContext(model *speechtiming.TCN, language string, features []
 	if model.F0Position() {
 		positions = unifiedProsodyPositions(features, question)
 	}
+	pos, groups := model.PosVocab(), model.PosGroup1Vocab()
 	for index, timing := range timings {
 		var vector []float32
 		if index < len(features) {
-			vector = unifiedProsodyExtraVector(features[index], model)
+			vector = unifiedProsodyExtraVector(features[index], model.F0Context()-2, pos, groups)
 			if positions != nil {
 				copy(vector[len(vector)-speechtiming.PositionFeatures:], positions[index][:])
 			}
@@ -218,18 +210,28 @@ func unifiedProsodyContext(model *speechtiming.TCN, language string, features []
 	return ids, cont, speech, nil
 }
 
-// unifiedProsodyContourはF0ヘッドの輪郭を自動ピッチ曲線として返す。
-func unifiedProsodyContour(model *speechtiming.TCN, language string, features []prosody.FeatureFrame, timings []prosody.MoraTiming, durationMS float64, synthesisPlan *plan.Plan, question bool) *render.PitchCurve {
+type unifiedProsodyPrediction struct {
+	contour *render.PitchCurve
+	energy  []float32
+	ids     [][3]int
+}
+
+func predictUnifiedProsody(model *speechtiming.TCN, language string, features []prosody.FeatureFrame, timings []prosody.MoraTiming, durationMS float64, synthesisPlan *plan.Plan, question, includeEnergy bool) unifiedProsodyPrediction {
 	if model == nil || !model.HasF0Head() {
-		return nil
+		return unifiedProsodyPrediction{}
 	}
 	ids, cont, speech, err := unifiedProsodyContext(model, language, features, timings, durationMS, synthesisPlan, question)
 	if err != nil {
-		return nil
+		return unifiedProsodyPrediction{}
 	}
-	values, err := model.PredictF0(ids, cont)
+	var values, energy []float32
+	if includeEnergy {
+		values, energy, err = model.PredictProsody(ids, cont)
+	} else {
+		values, err = model.PredictF0(ids, cont)
+	}
 	if err != nil || len(values) == 0 {
-		return nil
+		return unifiedProsodyPrediction{}
 	}
 	scale := model.F0Scale()
 	if scale <= 0 {
@@ -241,10 +243,10 @@ func unifiedProsodyContour(model *speechtiming.TCN, language string, features []
 	}
 	if model.F0Scale() > 0 {
 		// 蒸留モデルはv10と同じ後処理（平滑化20ms・p99 75cent・最大90cent）を再現する。
-		cents = smoothPhraseContour(cents, speech, 2.0)
-		cents = clipContourPercentile(cents, speech, 75, 90)
+		cents = prosody.SmoothPitchPhrases(cents, speech, 10, 20)
+		prosody.ClipPitchContour(cents, speech, 75, 90)
 	}
-	return &render.PitchCurve{FrameMS: 10, Cents: cents}
+	return unifiedProsodyPrediction{contour: &render.PitchCurve{FrameMS: 10, Cents: cents}, energy: energy, ids: ids}
 }
 
 // previewPlanは音源を読まないプレビュー用に、モーラの時刻からF0ヘッドの入力に足りるプランを組む。
@@ -263,82 +265,12 @@ func previewPlan(morae []frontend.Mora, timings []prosody.MoraTiming, durationMS
 	return result
 }
 
-// smoothPhraseContourは発話区間ごとにGaussian平滑化する（v10のランタイムと同じ）。
-func smoothPhraseContour(values []float64, speech []bool, sigma float64) []float64 {
-	result := append([]float64(nil), values...)
-	if sigma <= 0 || len(values) != len(speech) {
-		return result
-	}
-	radius := max(1, int(math.Ceil(3*sigma)))
-	weights := make([]float64, 2*radius+1)
-	for offset := -radius; offset <= radius; offset++ {
-		weights[offset+radius] = math.Exp(-0.5 * math.Pow(float64(offset)/sigma, 2))
-	}
-	for start := 0; start < len(values); {
-		if !speech[start] {
-			start++
-			continue
-		}
-		end := start + 1
-		for end < len(values) && speech[end] {
-			end++
-		}
-		for position := start; position < end; position++ {
-			sum, weightSum := 0.0, 0.0
-			for offset := -radius; offset <= radius; offset++ {
-				source := max(start, min(end-1, position+offset))
-				weight := weights[offset+radius]
-				sum += values[source] * weight
-				weightSum += weight
-			}
-			result[position] = sum / weightSum
-		}
-		start = end
-	}
-	return result
-}
-
-// clipContourPercentileは発話区間のp99を上限へ揃え、最大値でクリップする（v10のランタイムと同じ）。
-func clipContourPercentile(values []float64, speech []bool, p99, maximum float64) []float64 {
-	var selected []float64
-	for index, value := range values {
-		if index < len(speech) && speech[index] {
-			selected = append(selected, math.Abs(value))
-		}
-	}
-	if len(selected) > 0 {
-		sort.Float64s(selected)
-		index := int(math.Ceil(0.99*float64(len(selected)))) - 1
-		observed := selected[max(0, min(len(selected)-1, index))]
-		if observed > p99 && observed > 0 {
-			gain := p99 / observed
-			for i := range values {
-				if i < len(speech) && speech[i] {
-					values[i] *= gain
-				}
-			}
-		}
-	}
-	for i := range values {
-		values[i] = math.Min(maximum, math.Max(-maximum, values[i]))
-	}
-	return values
-}
-
-// applyUnifiedProsodyEnergyはエネルギーヘッドの値を平滑化し、プランのEnergyFactorへ適用する。
-func applyUnifiedProsodyEnergy(model *speechtiming.TCN, language string, features []prosody.FeatureFrame, timings []prosody.MoraTiming, durationMS float64, synthesisPlan *plan.Plan, question bool) {
-	if model == nil || !model.HasEnergyHead() {
+func (prediction unifiedProsodyPrediction) applyEnergy(model *speechtiming.TCN, synthesisPlan *plan.Plan) {
+	values, ids := prediction.energy, prediction.ids
+	if len(values) == 0 {
 		return
 	}
-	ids, cont, _, err := unifiedProsodyContext(model, language, features, timings, durationMS, synthesisPlan, question)
-	if err != nil {
-		return
-	}
-	values, err := model.PredictEnergy(ids, cont)
-	if err != nil || len(values) == 0 {
-		return
-	}
-	// 学習目標は発話内で中心化されているため、推論値も有声フレームの平均で中心化する。
+	// 学習目標に合わせ、休止を除いた平均で中心化する。
 	silence := -1
 	for index, name := range model.Phones() {
 		if name == "sil" {

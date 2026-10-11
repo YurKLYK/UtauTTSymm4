@@ -534,8 +534,8 @@ func PredictProsody(cfg Config) (*ProsodyPreview, error) {
 		result.FramePitchCurve = curve
 	}
 	if result.FramePitchCurve == nil && applyPitchEnabled(cfg) && rendererSupportsFramePitch(cfg.RendererCapabilities) {
-		// 合成と同じF0ヘッドの曲線を見せる（v10だけの曲線を見せると、合成と食い違う）。
-		result.FramePitchCurve = f0HeadPitchCurve(cfg, loadedProsody, language, morae, prosodyFeatures, timings, totalDurationMS, previewPlan(morae, timings, cursor))
+		unified := predictUnifiedProsody(unifiedF0Head(loadedProsody), language, prosodyFeatures, timings, totalDurationMS, previewPlan(morae, timings, cursor), finalPhraseIsQuestion(cfg.Text), false)
+		result.FramePitchCurve = f0HeadPitchCurve(cfg, loadedProsody, morae, prosodyFeatures, timings, totalDurationMS, unified.contour)
 	}
 	if result.FramePitchCurve == nil && shouldPredictFrameContour(cfg, loadedProsody) {
 		question := finalPhraseIsQuestion(cfg.Text)
