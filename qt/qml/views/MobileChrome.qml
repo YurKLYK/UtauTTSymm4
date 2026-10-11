@@ -20,6 +20,7 @@ Item {
                 dictionaryDialog.close();
                 licenseDialog.close();
                 onboardingDialog.close();
+                voicebankDetailsDialog.close();
             }
         }
     }
@@ -50,6 +51,8 @@ Item {
             id: menuScroll
             implicitWidth: 0
             contentWidth: availableWidth
+            // スクロールバーは右端に重ねて置かれるので、スクロールするときはその分だけボタンの幅を空ける。
+            rightPadding: ScrollBar.vertical.size < 1 ? ScrollBar.vertical.width + 6 : 0
             // デスクトップのメニューバーと同じ順に並べる。スマホで使わない項目（終了・フォルダを開く・プラグイン・exo）と、
             // 同じ動作になる項目（Webでは「名前を付けて保存」は「保存」と同じ）は置かない。元に戻す・やり直すは見出しにある。
             ColumnLayout {
@@ -166,7 +169,7 @@ Item {
                 MenuButton {
                     text: root.window.translator.tr("menu.help.voicebankDetails")
                     enabled: root.backend.voicebanks.length > 0
-                    onClicked: { menuDrawer.close(); root.window.showVoicebankDetails(); }
+                    onClicked: { menuDrawer.close(); voicebankDetailsDialog.open(); }
                 }
                 MenuButton {
                     text: root.window.translator.tr("menu.help.exportDiagnostics")
@@ -199,6 +202,7 @@ Item {
             id: settingsScroll
             implicitWidth: 0
             contentWidth: availableWidth
+            rightPadding: ScrollBar.vertical.size < 1 ? ScrollBar.vertical.width + 6 : 0
             ColumnLayout {
                 width: settingsScroll.availableWidth
                 spacing: 12
@@ -255,6 +259,15 @@ Item {
         id: licenseDialog
         title: root.window.translator.tr("license.title")
         contentItem: LicenseContent { documents: root.window.licenseDocuments }
+    }
+
+    MobilePageDialog {
+        id: voicebankDetailsDialog
+        title: root.window.translator.tr("voicebankDetails.title")
+        contentItem: VoicebankDetailsContent {
+            backend: root.backend
+            translator: root.window.translator
+        }
     }
 
     MobilePageDialog {
