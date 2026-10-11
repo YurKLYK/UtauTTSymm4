@@ -33,6 +33,11 @@
   padding-top: 0;
 }
 
+.vp-doc a.download-badge {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
 .VPSidebar nav .group + .group {
   border-top: none;
   padding-top: 0;
