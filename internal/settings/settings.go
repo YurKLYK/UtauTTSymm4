@@ -1,8 +1,4 @@
-// Package settingsは合成設定の定義表。既定値・範囲・表示・適用するproviderをここ1か所で持つ。
-//
-// 合成の前段（読み・発話計画・抑揚）の設定はRendererによらず共通で、Providersは空にする。
-// Renderer固有の設定はProvidersに対象のprovider IDを書く。Renderer manifestは、この表にない
-// 外部providerの設定だけを宣言する。カタログはこの表をmanifestの設定へ合成してGUIへ渡す。
+// Package settingsは合成設定の既定値・範囲・表示・適用先を定義する。
 package settings
 
 type Option struct {

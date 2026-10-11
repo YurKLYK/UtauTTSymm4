@@ -11,20 +11,7 @@ import (
 
 var rendererID = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,95}$`)
 
-func decodeRenderer(data []byte, directory string) (Renderer, error) {
-	var header struct {
-		ManifestVersion int `json:"manifest_version"`
-	}
-	if err := json.Unmarshal(data, &header); err != nil {
-		return Renderer{}, err
-	}
-	if header.ManifestVersion != 2 {
-		return Renderer{}, fmt.Errorf("unsupported manifest_version %d", header.ManifestVersion)
-	}
-	return decodeRendererV2(data, directory)
-}
-
-func decodeRendererV2(data []byte, _ string) (Renderer, error) {
+func decodeRenderer(data []byte) (Renderer, error) {
 	var doc Renderer
 	if err := decodeStrictJSON(data, &doc); err != nil {
 		return Renderer{}, err
@@ -38,15 +25,11 @@ func decodeRendererV2(data []byte, _ string) (Renderer, error) {
 	if err := validateRendererSettings(doc.Settings); err != nil {
 		return Renderer{}, err
 	}
-	doc.ProviderArgs = append([]string(nil), doc.ProviderArgs...)
-	doc.Settings = append([]RendererSetting(nil), doc.Settings...)
 	if len(doc.Platforms) == 0 && len(doc.PlatformResources) > 0 {
 		doc.Platforms = make([]string, 0, len(doc.PlatformResources))
 		for platform := range doc.PlatformResources {
 			doc.Platforms = append(doc.Platforms, platform)
 		}
-	} else {
-		doc.Platforms = append([]string(nil), doc.Platforms...)
 	}
 	return doc, nil
 }

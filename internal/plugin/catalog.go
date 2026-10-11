@@ -245,7 +245,7 @@ func DiscoverRenderers(directories []string, supportsProvider func(string) bool)
 				problems = append(problems, fmt.Errorf("read renderer manifest %q: %w", path, err))
 				return nil
 			}
-			renderer, err := decodeRenderer(data, filepath.Dir(path))
+			renderer, err := decodeRenderer(data)
 			if err != nil {
 				problems = append(problems, fmt.Errorf("decode renderer manifest %q: %w", path, err))
 				return nil
@@ -277,25 +277,23 @@ func DiscoverRenderers(directories []string, supportsProvider func(string) bool)
 	return result, errors.Join(problems...)
 }
 
-// withTableSettingsは設定表のうちproviderに適用されるものを表の順に並べ、manifestの宣言で
-// 同じIDを上書きし、表にない設定を後ろへ足す。
+// 設定表の順に並べ、manifestの同じIDで上書きし、固有項目を末尾に追加する。
 func withTableSettings(renderer Renderer) Renderer {
 	declared := make(map[string]RendererSetting, len(renderer.Settings))
 	for _, setting := range renderer.Settings {
 		declared[setting.ID] = setting
 	}
-	used := map[string]bool{}
 	var merged []RendererSetting
 	for _, setting := range settings.ForProvider(renderer.Provider) {
 		if override, ok := declared[setting.ID]; ok {
 			merged = append(merged, override)
-			used[setting.ID] = true
+			delete(declared, setting.ID)
 			continue
 		}
 		merged = append(merged, rendererSettingFromTable(setting))
 	}
 	for _, setting := range renderer.Settings {
-		if !used[setting.ID] {
+		if _, remaining := declared[setting.ID]; remaining {
 			merged = append(merged, setting)
 		}
 	}

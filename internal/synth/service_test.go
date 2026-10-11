@@ -24,6 +24,34 @@ func testRenderer(id, provider string) plugin.Renderer {
 	}
 }
 
+func TestDefaultRequestResolvesSynthesisSettings(t *testing.T) {
+	service := NewService(&plugin.Catalog{
+		Renderers: []plugin.Renderer{testRenderer("waveform", "waveform")},
+	}, "waveform", "", "", "", testVoicebankResolver{path: "voicebank"})
+	resolved, err := service.ResolveSynthesis(DefaultRequest())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, options := resolved.Config, resolved.ProviderOptions
+	if cfg.MoraDurationMS != 120 || cfg.PauseDurationMS != 180 || cfg.IntonationStrength != 4 || !cfg.ApplyPitch {
+		t.Fatalf("default timing/pitch = %#v", cfg)
+	}
+	if cfg.ContextDuration == nil || *cfg.ContextDuration {
+		t.Fatalf("default context duration = %v", cfg.ContextDuration)
+	}
+	for name, enabled := range map[string]*bool{
+		"boundary_tone": cfg.BoundaryTone, "stretch_adapt": cfg.StretchAdapt,
+		"pause_context": cfg.PauseContext, "english_weak_form": cfg.EnglishWeakForm,
+	} {
+		if enabled == nil || !*enabled {
+			t.Errorf("default %s = %v, want enabled", name, enabled)
+		}
+	}
+	if !options.Worldline.TimingWarpEnabled() || !options.Worldline.MicroprosodyEnabled() || len(options.RendererDiagnostics) != 0 {
+		t.Fatalf("default provider options = %#v", options)
+	}
+}
+
 func (resolver testVoicebankResolver) Resolve(string) (string, bool) {
 	return resolver.path, true
 }

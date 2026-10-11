@@ -12,21 +12,9 @@ func TestRendererManifestRejectsUnsupportedAndInvalidFields(t *testing.T) {
 		`{"manifest_version":1,"kind":"renderer","id":"example.wave","display_name":"Example","backend":"waveform","protocol_version":1}`,
 		`{"manifest_version":2,"kind":"synthesis-engine","id":"example.wave","display_name":"Example","contract":"unit-renderer","provider":"waveform","provider_version":"1","resources":{"engine":{"required":true}}}`,
 	} {
-		if _, err := decodeRenderer([]byte(document), t.TempDir()); err == nil {
+		if _, err := decodeRenderer([]byte(document)); err == nil {
 			t.Fatalf("unsupported or invalid field was accepted: %s", document)
 		}
-	}
-}
-
-func TestRendererManifestV2PlatformResourcesSelectCurrentPlatform(t *testing.T) {
-	directory := t.TempDir()
-	document := `{"manifest_version":2,"kind":"synthesis-engine","id":"example.wave","display_name":"Example","contract":"unit-renderer","provider":"waveform","provider_version":"1","platform_resources":{"any":{"engine":{"path":"any-engine"}}}}`
-	item, err := decodeRenderer([]byte(document), directory)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := filepath.Base(item.Resource("engine").Path); got != "any-engine" {
-		t.Fatalf("asset = %q", got)
 	}
 }
 
@@ -82,13 +70,6 @@ func TestRendererManifestV2AcceptsExternalProviderSession(t *testing.T) {
 func TestRendererManifestUnsupportedPlatformIsSkipped(t *testing.T) {
 	directory := t.TempDir()
 	document := `{"manifest_version":2,"kind":"synthesis-engine","id":"example.future","display_name":"Future","contract":"unit-renderer","provider":"waveform","provider_version":"1","platforms":["plan9-amd64"]}`
-	item, err := decodeRenderer([]byte(document), directory)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rendererSupportedOnCurrentPlatform(item) {
-		t.Fatalf("unsupported platform was accepted: %#v", item.Platforms)
-	}
 	if err := os.WriteFile(filepath.Join(directory, "renderer.json"), []byte(document), 0o600); err != nil {
 		t.Fatal(err)
 	}

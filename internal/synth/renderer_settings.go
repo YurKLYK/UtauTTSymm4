@@ -19,12 +19,11 @@ type rendererSettingKind int
 
 const (
 	rendererSettingKindNumber rendererSettingKind = iota
-	rendererSettingKindInteger
 	rendererSettingKindBoolean
 	rendererSettingKindString
 )
 
-// 新しい設定は設定表（internal/settings）とこのテーブルへ追加する。既定値は設定表から引く。Requestの固定フィールドは増やさない。
+// 既定値はinternal/settingsから取得し、このテーブルで適用先を指定する。
 type rendererSettingSpec struct {
 	id           string
 	kind         rendererSettingKind
@@ -36,63 +35,65 @@ type rendererSettingSpec struct {
 
 // rendererSettingSpecsはGoが既知の設定を定義する。manifestにない項目もAPI互換用に残す。
 var rendererSettingSpecs = []rendererSettingSpec{
-	numberSetting("mora_duration_ms", DefaultMoraDurationMS,
+	numberSetting("mora_duration_ms",
 		func(r Request) any { return r.MoraDurationMS },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.MoraDurationMS = value }),
-	numberSetting("pause_duration_ms", DefaultPauseDurationMS,
+	numberSetting("pause_duration_ms",
 		func(r Request) any { return r.PauseDurationMS },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.PauseDurationMS = value }),
-	numberSetting("leading_preutterance_ms", settings.Number("leading_preutterance_ms"),
+	numberSetting("leading_preutterance_ms",
 		func(r Request) any { return r.LeadingPreutteranceMS },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.LeadingPreutteranceMS = value }),
-	numberSetting("intonation_strength", DefaultIntonationStrength,
+	numberSetting("intonation_strength",
 		func(r Request) any { return r.IntonationStrength },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.IntonationStrength = value }),
-	boolSetting("context_duration", DefaultContextDuration,
+	boolSetting("context_duration",
 		func(r Request) any { return r.ContextDuration },
 		func(value bool, cfg *tts.Config) { cfg.ContextDuration = &value }),
-	numberSetting("context_duration_strength", DefaultContextDurationStrength,
+	numberSetting("context_duration_strength",
 		func(r Request) any { return r.ContextDurationStrength },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.ContextDurationStrength = value }),
-	boolSetting("boundary_tone", DefaultBoundaryTone,
+	boolSetting("boundary_tone",
 		func(r Request) any { return r.BoundaryTone },
 		func(value bool, cfg *tts.Config) { cfg.BoundaryTone = &value }),
-	numberSetting("boundary_tone_strength", DefaultBoundaryToneStrength,
+	numberSetting("boundary_tone_strength",
 		func(r Request) any { return r.BoundaryToneStrength },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.BoundaryToneStrength = value }),
-	boolSetting("stretch_adapt", DefaultStretchAdapt,
+	boolSetting("stretch_adapt",
 		func(r Request) any { return r.StretchAdapt },
 		func(value bool, cfg *tts.Config) { cfg.StretchAdapt = &value }),
-	numberSetting("stretch_adapt_strength", DefaultStretchAdaptStrength,
+	numberSetting("stretch_adapt_strength",
 		func(r Request) any { return r.StretchAdaptStrength },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.StretchAdaptStrength = value }),
-	boolSetting("pause_context", DefaultPauseContext,
+	boolSetting("pause_context",
 		func(r Request) any { return r.PauseContext },
 		func(value bool, cfg *tts.Config) { cfg.PauseContext = &value }),
-	numberSetting("pause_context_strength", DefaultPauseContextStrength,
+	numberSetting("pause_context_strength",
 		func(r Request) any { return r.PauseContextStrength },
 		func(value float64, cfg *tts.Config, _ *render.ProviderOptions) { cfg.PauseContextStrength = value }),
-	boolSetting("english_weak_form", DefaultEnglishWeakForm,
+	boolSetting("english_weak_form",
 		func(r Request) any { return r.EnglishWeakForm },
 		func(value bool, cfg *tts.Config) { cfg.EnglishWeakForm = &value }),
-	integerSetting("diffsinger_steps", settings.Number("diffsinger_steps"),
+	numberSetting("diffsinger_steps",
 		func(r Request) any { return float64(r.DiffSingerSteps) },
-		func(value float64, options *render.ProviderOptions) { options.DiffSinger.Steps = int64(value) }),
-	numberSetting("diffsinger_expr", settings.Number("diffsinger_expr"),
+		func(value float64, _ *tts.Config, options *render.ProviderOptions) {
+			options.DiffSinger.Steps = int64(value)
+		}),
+	numberSetting("diffsinger_expr",
 		func(r Request) any { return r.DiffSingerExpr },
 		func(value float64, _ *tts.Config, options *render.ProviderOptions) { options.DiffSinger.Expr = value }),
-	numberSetting("diffsinger_duration_mix", settings.Number("diffsinger_duration_mix"),
+	numberSetting("diffsinger_duration_mix",
 		func(r Request) any { return r.DiffSingerDurationMix },
 		func(value float64, _ *tts.Config, options *render.ProviderOptions) {
 			options.DiffSinger.DurationMix = value
 		}),
-	numberSetting("diffsinger_pitch_mix", settings.Number("diffsinger_pitch_mix"),
+	numberSetting("diffsinger_pitch_mix",
 		func(r Request) any { return r.DiffSingerPitchMix },
 		func(value float64, _ *tts.Config, options *render.ProviderOptions) {
 			options.DiffSinger.PitchMix = value
 		}),
 	{
-		id: "timing_warp", kind: rendererSettingKindBoolean, defaultValue: render.WorldlineProviderOptions{}.TimingWarpEnabled(),
+		id: "timing_warp", kind: rendererSettingKindBoolean, defaultValue: settings.Bool("timing_warp"),
 		typed: func(r Request) any { return r.Worldline.TimingWarpEnabled() },
 		apply: func(value any, _ *tts.Config, options *render.ProviderOptions, _ *rendererSettingsResolution) {
 			enabled := value.(bool)
@@ -100,51 +101,42 @@ var rendererSettingSpecs = []rendererSettingSpec{
 		},
 	},
 	{
-		id: "microprosody", kind: rendererSettingKindBoolean, defaultValue: render.WorldlineProviderOptions{}.MicroprosodyEnabled(),
+		id: "microprosody", kind: rendererSettingKindBoolean, defaultValue: settings.Bool("microprosody"),
 		typed: func(r Request) any { return r.Worldline.MicroprosodyEnabled() },
 		apply: func(value any, _ *tts.Config, options *render.ProviderOptions, _ *rendererSettingsResolution) {
 			enabled := value.(bool)
 			options.Worldline.Microprosody = &enabled
 		},
 	},
-	stringSetting("resampler", settings.String("resampler"),
+	stringSetting("resampler",
 		func(r Request) any { return r.Resampler },
 		func(value string, resolution *rendererSettingsResolution) { resolution.Resampler = value }),
-	stringSetting("wavtool", settings.String("wavtool"),
+	stringSetting("wavtool",
 		func(r Request) any { return r.Wavtool },
 		func(value string, resolution *rendererSettingsResolution) { resolution.Wavtool = value }),
 }
 
-func numberSetting(id string, defaultValue float64, typed func(Request) any, apply func(float64, *tts.Config, *render.ProviderOptions)) rendererSettingSpec {
+func numberSetting(id string, typed func(Request) any, apply func(float64, *tts.Config, *render.ProviderOptions)) rendererSettingSpec {
 	return rendererSettingSpec{
-		id: id, kind: rendererSettingKindNumber, defaultValue: defaultValue, typed: typed,
+		id: id, kind: rendererSettingKindNumber, defaultValue: settings.Number(id), typed: typed,
 		apply: func(value any, cfg *tts.Config, options *render.ProviderOptions, _ *rendererSettingsResolution) {
 			apply(value.(float64), cfg, options)
 		},
 	}
 }
 
-func integerSetting(id string, defaultValue float64, typed func(Request) any, apply func(float64, *render.ProviderOptions)) rendererSettingSpec {
+func boolSetting(id string, typed func(Request) any, apply func(bool, *tts.Config)) rendererSettingSpec {
 	return rendererSettingSpec{
-		id: id, kind: rendererSettingKindInteger, defaultValue: defaultValue, typed: typed,
-		apply: func(value any, _ *tts.Config, options *render.ProviderOptions, _ *rendererSettingsResolution) {
-			apply(value.(float64), options)
-		},
-	}
-}
-
-func boolSetting(id string, defaultValue bool, typed func(Request) any, apply func(bool, *tts.Config)) rendererSettingSpec {
-	return rendererSettingSpec{
-		id: id, kind: rendererSettingKindBoolean, defaultValue: defaultValue, typed: typed,
+		id: id, kind: rendererSettingKindBoolean, defaultValue: settings.Bool(id), typed: typed,
 		apply: func(value any, cfg *tts.Config, _ *render.ProviderOptions, _ *rendererSettingsResolution) {
 			apply(value.(bool), cfg)
 		},
 	}
 }
 
-func stringSetting(id string, defaultValue string, typed func(Request) any, apply func(string, *rendererSettingsResolution)) rendererSettingSpec {
+func stringSetting(id string, typed func(Request) any, apply func(string, *rendererSettingsResolution)) rendererSettingSpec {
 	return rendererSettingSpec{
-		id: id, kind: rendererSettingKindString, defaultValue: defaultValue, typed: typed,
+		id: id, kind: rendererSettingKindString, defaultValue: settings.String(id), typed: typed,
 		apply: func(value any, _ *tts.Config, _ *render.ProviderOptions, resolution *rendererSettingsResolution) {
 			apply(value.(string), resolution)
 		},
@@ -153,21 +145,15 @@ func stringSetting(id string, defaultValue string, typed func(Request) any, appl
 
 // 優先順はrenderer_settings、型付き設定、既定値。
 func resolveRendererSettings(request Request, cfg *tts.Config, options *render.ProviderOptions) rendererSettingsResolution {
-	return resolveRendererSettingsWith(rendererSettingSpecs, request, cfg, options)
-}
-
-func resolveRendererSettingsWith(specs []rendererSettingSpec, request Request, cfg *tts.Config, options *render.ProviderOptions) rendererSettingsResolution {
 	resolution := rendererSettingsResolution{}
-	for _, spec := range specs {
-		spec.apply(spec.defaultValue, cfg, options, &resolution)
-	}
-	for _, spec := range specs {
-		if spec.typed == nil {
-			continue
+	for _, spec := range rendererSettingSpecs {
+		value := spec.defaultValue
+		if spec.typed != nil {
+			value = spec.typed(request)
 		}
-		spec.apply(spec.typed(request), cfg, options, &resolution)
+		spec.apply(value, cfg, options, &resolution)
 	}
-	applyRendererSettingsMap(specs, request.RendererSettings, cfg, options, &resolution)
+	applyRendererSettingsMap(rendererSettingSpecs, request.RendererSettings, cfg, options, &resolution)
 	return resolution
 }
 
