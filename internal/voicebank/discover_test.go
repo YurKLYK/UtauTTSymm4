@@ -153,6 +153,83 @@ func TestInspectRejectsImageOutsideVoicebank(t *testing.T) {
 	}
 }
 
+func TestInspectUsesCharacterYAMLImageWhenCharacterTextHasNone(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "character.txt"), []byte("name=テスト音源\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	yaml := "name: テスト音源 Ver1.5\n" +
+		"localized_names:\nen-US: Test Voice\n" +
+		"image: icon.bmp\n" +
+		"portrait: portrait.webp\n" +
+		"portrait_opacity: 0.67\n"
+	if err := os.WriteFile(filepath.Join(root, "character.yaml"), []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "icon.bmp"), []byte("BM"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := Inspect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.Name != "テスト音源" {
+		t.Fatalf("name = %q", summary.Name)
+	}
+	if want := filepath.Join(root, "icon.bmp"); summary.ImagePath != want {
+		t.Fatalf("image = %q, want %q", summary.ImagePath, want)
+	}
+}
+
+func TestInspectFindsRootImagesWithoutMetadata(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "icon.bmp"), []byte("BM"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "wallpaper.png"), []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := Inspect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(root, "icon.bmp"); summary.ImagePath != want {
+		t.Fatalf("image = %q, want %q", summary.ImagePath, want)
+	}
+}
+
+func TestInspectCharacterTextImageWinsOverCharacterYAML(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "character.txt"), []byte("image=\"card bmp\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "character.yaml"), []byte("image: yaml.png\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "card bmp"), []byte("BM"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "yaml.png"), []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	summary, err := Inspect(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(root, "card bmp"); summary.ImagePath != want {
+		t.Fatalf("image = %q, want %q", summary.ImagePath, want)
+	}
+}
+
 func TestDiscoverAcceptsVoicebankRoot(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {

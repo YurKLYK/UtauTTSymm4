@@ -87,7 +87,7 @@ func TestPackage(t *testing.T) {
 
 func TestPackageInvalid(t *testing.T) {
 	source, output := fixture(t)
-	for _, tc := range []struct{ url, id string }{{"relative/assets", "valid"}, {"https://secret:token@example.test/", "valid"}, {"https://assets.example.test", "../unsafe"}} {
+	for _, tc := range []struct{ url, id string }{{"relative/assets", "valid"}, {"https://name@example.test/", "valid"}, {"https://assets.example.test", "../unsafe"}} {
 		_, err := assemble(source, output, tc.url, tc.id, "v1.2.3", strings.Repeat("a", 40), "releases", "")
 		if err == nil {
 			t.Fatalf("accepted %v", tc)

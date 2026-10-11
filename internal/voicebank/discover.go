@@ -196,32 +196,8 @@ func Inspect(root string) (Summary, error) {
 	if !found {
 		return Summary{}, ErrNoOto
 	}
-	name := filepath.Base(absRoot)
 	characterPath := findRootFile(absRoot, "character.txt")
-	imagePath := ""
-	if characterPath != "" {
-		path := characterPath
-		if text, readErr := readMetadata(path); readErr == nil {
-			for _, line := range strings.Split(text, "\n") {
-				parts := strings.SplitN(strings.TrimSpace(line), "=", 2)
-				if len(parts) != 2 {
-					continue
-				}
-				key, configured := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
-				switch {
-				case strings.EqualFold(key, "name"):
-					if configured != "" {
-						name = configured
-					}
-				case strings.EqualFold(key, "image"):
-					imagePath = safePresentationFile(absRoot, configured)
-				}
-			}
-		}
-	}
-	if imagePath == "" {
-		imagePath = findRootImage(absRoot)
-	}
+	name, imagePath := presentationIdentity(absRoot, characterPath)
 	readmePath := findRootFile(absRoot, "readme.txt")
 	if readmePath == "" {
 		readmePath = findRootFile(absRoot, "readme.md")
@@ -244,28 +220,8 @@ func inspectDiffSinger(root string) (Summary, error) {
 	if !diffsinger.IsSinger(absRoot) {
 		return Summary{}, ErrNoOto
 	}
-	name := filepath.Base(absRoot)
 	characterPath := findRootFile(absRoot, "character.txt")
-	imagePath := ""
-	if characterPath != "" {
-		if text, readErr := readMetadata(characterPath); readErr == nil {
-			for _, line := range strings.Split(text, "\n") {
-				parts := strings.SplitN(strings.TrimSpace(line), "=", 2)
-				if len(parts) != 2 {
-					continue
-				}
-				switch {
-				case strings.EqualFold(strings.TrimSpace(parts[0]), "name") && strings.TrimSpace(parts[1]) != "":
-					name = strings.TrimSpace(parts[1])
-				case strings.EqualFold(strings.TrimSpace(parts[0]), "image"):
-					imagePath = safePresentationFile(absRoot, strings.TrimSpace(parts[1]))
-				}
-			}
-		}
-	}
-	if imagePath == "" {
-		imagePath = findRootImage(absRoot)
-	}
+	name, imagePath := presentationIdentity(absRoot, characterPath)
 	readmePath := findRootFile(absRoot, "readme.txt")
 	if readmePath == "" {
 		readmePath = findRootFile(absRoot, "readme.md")
@@ -273,21 +229,96 @@ func inspectDiffSinger(root string) (Summary, error) {
 	return Summary{Name: name, Path: absRoot, Kind: diffsinger.SingerKind, ImagePath: imagePath, CharacterPath: characterPath, ReadmePath: readmePath}, nil
 }
 
+func presentationIdentity(root, characterPath string) (string, string) {
+	name := filepath.Base(root)
+	imagePath := ""
+	if characterPath != "" {
+		if text, err := readMetadata(characterPath); err == nil {
+			for line := range strings.SplitSeq(text, "\n") {
+				key, value, ok := strings.Cut(strings.TrimSpace(line), "=")
+				if !ok {
+					continue
+				}
+				key, value = strings.TrimSpace(key), unquoteMetadataValue(strings.TrimSpace(value))
+				switch {
+				case strings.EqualFold(key, "name") && value != "":
+					name = value
+				case strings.EqualFold(key, "image") && imagePath == "":
+					imagePath = safePresentationFile(root, value)
+				}
+			}
+		}
+	}
+	if imagePath == "" {
+		imagePath = characterYAMLImage(root)
+	}
+	if imagePath == "" {
+		imagePath = findRootImage(root)
+	}
+	return name, imagePath
+}
+
+func characterYAMLImage(root string) string {
+	path := findRootFile(root, "character.yaml")
+	if path == "" {
+		path = findRootFile(root, "character.yml")
+	}
+	if path == "" {
+		return ""
+	}
+	text, err := readMetadata(path)
+	if err != nil {
+		return ""
+	}
+	for line := range strings.SplitSeq(text, "\n") {
+		if !strings.HasPrefix(line, "image:") {
+			continue
+		}
+		if value := unquoteMetadataValue(strings.TrimSpace(strings.TrimPrefix(line, "image:"))); value != "" {
+			return safePresentationFile(root, value)
+		}
+	}
+	return ""
+}
+
+func unquoteMetadataValue(value string) string {
+	if len(value) >= 2 && (value[0] == '"' || value[0] == '\'') && value[len(value)-1] == value[0] {
+		return value[1 : len(value)-1]
+	}
+	return value
+}
+
 func findRootImage(root string) string {
 	entries, err := os.ReadDir(root)
 	if err != nil {
 		return ""
 	}
+	fallback := ""
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if entry.IsDir() || !isImageFile(entry.Name()) {
 			continue
 		}
-		extension := strings.ToLower(filepath.Ext(entry.Name()))
-		if extension == ".bmp" || extension == ".png" || extension == ".jpg" || extension == ".jpeg" {
-			return safePresentationFile(root, entry.Name())
+		candidate := safePresentationFile(root, entry.Name())
+		if candidate == "" {
+			continue
+		}
+		if strings.EqualFold(entry.Name(), "icon.bmp") {
+			return candidate
+		}
+		if fallback == "" {
+			fallback = candidate
 		}
 	}
-	return ""
+	return fallback
+}
+
+func isImageFile(name string) bool {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".bmp", ".png", ".jpg", ".jpeg":
+		return true
+	default:
+		return false
+	}
 }
 
 func safePresentationFile(root, relative string) string {
