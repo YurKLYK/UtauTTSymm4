@@ -25,14 +25,15 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Print(err)
-		os.Exit(1)
-	}
+	os.Exit(executeCLI(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 }
 
-func run() error {
-	return runCLI(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
+func executeCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	err := runCLI(args, stdin, stdout, stderr)
+	if err != nil {
+		log.New(stderr, "", log.LstdFlags).Print(err)
+	}
+	return cliExitCode(err)
 }
 
 func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr error) {
@@ -99,8 +100,10 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		writeLab                 bool
 		textEncoding             string
 		showVersion              bool
+		jsonOutput               bool
 	)
 	flag.BoolVar(&showVersion, "version", false, "print application version")
+	flag.BoolVar(&jsonOutput, "json", false, "print result, version or error JSON to standard output")
 	flag.StringVar(&voicebankPath, "voicebank", "", "path to a UTAU voicebank directory")
 	flag.StringVar(&reading, "kana", "", "kana reading to synthesize")
 	flag.StringVar(&reading, "reading", "", "pronunciation to synthesize (kana, ARPAbet, or Pinyin)")
@@ -165,15 +168,35 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		if errors.Is(err, flagpkg.ErrHelp) {
 			return nil
 		}
-		return err
+		return cliFailure("flag_parse_error", err)
+	}
+	var report cliResponse
+	if jsonOutput {
+		// This defer runs after request completion and runtime shutdown. Never
+		// report success before Close has finished, or after an output failure.
+		defer func() {
+			report.OK = runErr == nil
+			if runErr != nil {
+				report = cliResponse{Error: &cliErrorReport{Code: cliErrorCode(runErr), Message: runErr.Error()}}
+			}
+			if err := json.NewEncoder(stdout).Encode(report); err != nil {
+				runErr = errors.Join(runErr, cliFailure("output_error", fmt.Errorf("write result JSON: %w", err)))
+			}
+		}()
 	}
 	if showVersion {
+		if jsonOutput {
+			report.Version = &cliVersionReport{Name: appinfo.Name(), Version: appinfo.Version()}
+			return nil
+		}
 		_, err := fmt.Fprintf(stdout, "%s %s\n", appinfo.Name(), appinfo.Version())
-		return err
+		return cliFailure("output_error", err)
 	}
 	if voicebankPath == "" || outPath == "" {
-		flag.Usage()
-		return errors.New("--voicebank and --out are required")
+		if !jsonOutput {
+			flag.Usage()
+		}
+		return cliFailure("invalid_arguments", errors.New("--voicebank and --out are required"))
 	}
 	var textSpecified, readingSpecified bool
 	flag.Visit(func(option *flagpkg.Flag) {
@@ -185,31 +208,36 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		}
 	})
 	if textFile != "" && textSpecified || readingFile != "" && readingSpecified {
-		return errors.New("--text-file conflicts with --text; --reading-file conflicts with --reading/--kana")
+		return cliFailure("invalid_arguments", errors.New("--text-file conflicts with --text; --reading-file conflicts with --reading/--kana"))
 	}
 	if textFile == "-" && readingFile == "-" {
-		return errors.New("only one input can read standard input")
+		return cliFailure("invalid_arguments", errors.New("only one input can read standard input"))
 	}
 	if outPath == "-" && (writeText || writeLab) {
-		return errors.New("--write-text and --write-lab require a WAV file path")
+		return cliFailure("invalid_arguments", errors.New("--write-text and --write-lab require a WAV file path"))
+	}
+	if outPath == "-" && jsonOutput {
+		return cliFailure("invalid_arguments", errors.New("--json cannot be combined with WAV output to standard output"))
 	}
 	if textFile != "" {
 		var err error
 		text, err = readUtteranceFile(textFile, stdin)
 		if err != nil {
-			return fmt.Errorf("read text input: %w", err)
+			return cliFailure("input_error", fmt.Errorf("read text input: %w", err))
 		}
 	}
 	if readingFile != "" {
 		var err error
 		reading, err = readUtteranceFile(readingFile, stdin)
 		if err != nil {
-			return fmt.Errorf("read pronunciation input: %w", err)
+			return cliFailure("input_error", fmt.Errorf("read pronunciation input: %w", err))
 		}
 	}
 	if reading == "" && text == "" {
-		flag.Usage()
-		return errors.New("either --text, --reading, --text-file or --reading-file is required")
+		if !jsonOutput {
+			flag.Usage()
+		}
+		return cliFailure("invalid_arguments", errors.New("either --text, --reading, --text-file or --reading-file is required"))
 	}
 	runtime, err := synth.NewRuntime(synth.RuntimeConfig{
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
@@ -217,37 +245,37 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		RendererDirectories: rendererDirectories, ModelDirectories: modelDirectories,
 	}, nil)
 	if err != nil {
-		return err
+		return cliFailure("initialization_error", err)
 	}
-	defer func() { runErr = errors.Join(runErr, runtime.Close()) }()
+	defer func() { runErr = errors.Join(runErr, cliFailure("shutdown_error", runtime.Close())) }()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, release, err := runtime.Begin(ctx)
 	if err != nil {
-		return err
+		return cliFailure("synthesis_error", err)
 	}
 	defer release()
 	resolver := runtime.Service
 
 	pitchFactors, err := loadPitchFactors(pitchContourPath, pitchContourCase)
 	if err != nil {
-		return err
+		return cliFailure("input_error", err)
 	}
 	prosodyFeatures, err := loadProsodyFeatures(prosodyFeaturesPath, prosodyFeaturesCase, text, reading)
 	if err != nil {
-		return err
+		return cliFailure("input_error", err)
 	}
 	dictionary, err := loadDictionary(dictionaryPath)
 	if err != nil {
-		return err
+		return cliFailure("input_error", err)
 	}
 	moraDurations, err := loadMoraDurations(moraDurationsPath)
 	if err != nil {
-		return err
+		return cliFailure("input_error", err)
 	}
 	resamplerExpressions, err := loadResamplerExpressions(resamplerExpressionsPath)
 	if err != nil {
-		return err
+		return cliFailure("input_error", err)
 	}
 	request := utautts.Request{
 		Text: text, Reading: reading, Language: language, Phonemizer: phonemizer,
@@ -286,12 +314,12 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	})
 	resolvedSynthesis, err := resolver.ResolveSynthesis(synthesisRequest)
 	if err != nil {
-		return err
+		return cliFailure("invalid_arguments", err)
 	}
 	resolvedSynthesis.Config.Context = ctx
 	output, err := synth.SynthesizeResolved(resolvedSynthesis)
 	if err != nil {
-		return err
+		return cliFailure("synthesis_error", err)
 	}
 	exportText := text
 	if exportText == "" {
@@ -301,17 +329,17 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		if err := synth.WriteFiles(outPath, output, synth.ExportOptions{
 			Text: exportText, WriteText: writeText, WriteLab: writeLab, TextEncoding: textEncoding,
 		}); err != nil {
-			return err
+			return cliFailure("output_error", err)
 		}
 	}
 	if planPath != "" {
 		data, err := json.MarshalIndent(output.RenderedPlan(), "", "  ")
 		if err != nil {
-			return err
+			return cliFailure("output_error", err)
 		}
 		data = append(data, '\n')
 		if err := os.WriteFile(planPath, data, 0o644); err != nil {
-			return err
+			return cliFailure("output_error", err)
 		}
 	}
 	if ustxOut != "" {
@@ -320,10 +348,10 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 			Curves: ustxFrameCurves(resolvedSynthesis.Config, 1),
 		})
 		if err != nil {
-			return err
+			return cliFailure("output_error", err)
 		}
 		if err := os.WriteFile(ustxOut, data, 0o644); err != nil {
-			return err
+			return cliFailure("output_error", err)
 		}
 	}
 
@@ -332,12 +360,16 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	if outPath == "-" {
 		audio := utautts.Audio{SampleRate: output.Audio.SampleRate, Channels: output.Audio.Channels, Samples: output.Audio.Data}
 		if err := audio.WriteWAV(stdout); err != nil {
-			return fmt.Errorf("write WAV to standard output: %w", err)
+			return cliFailure("output_error", fmt.Errorf("write WAV to standard output: %w", err))
 		}
 		summary = stderr
 	}
+	if jsonOutput {
+		report.Result = synthesisReport(outPath, output)
+		return nil
+	}
 	_, err = fmt.Fprintf(summary, "wrote %s (%.2fs, %d Hz, %d units)\n", outPath, duration, output.Audio.SampleRate, len(output.Plan.Units))
-	return err
+	return cliFailure("output_error", err)
 }
 
 func loadResamplerExpressions(path string) ([]render.ResamplerExpression, error) {

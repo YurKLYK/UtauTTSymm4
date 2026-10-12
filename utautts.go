@@ -250,14 +250,8 @@ func (e *Engine) Synthesize(ctx context.Context, request Request) (*Result, erro
 		}
 		result.Phonemes = append(result.Phonemes, Phoneme{symbol, float64(start) / 10000, float64(end) / 10000})
 	}
-	if output.RenderReport != nil {
-		for _, diagnostic := range output.RenderReport.Diagnostics {
-			result.Diagnostics = append(result.Diagnostics, Diagnostic{diagnostic.Severity, diagnostic.Code, diagnostic.Message})
-		}
-	}
-	for _, gap := range output.Plan.MissingPhones {
-		result.Diagnostics = append(result.Diagnostics, Diagnostic{"warning", "missing-phones",
-			fmt.Sprintf("position %d: %s", gap.Position, strings.Join(gap.Phones, " "))})
+	for _, diagnostic := range output.Diagnostics() {
+		result.Diagnostics = append(result.Diagnostics, Diagnostic{diagnostic.Severity, diagnostic.Code, diagnostic.Message})
 	}
 	return result, nil
 }

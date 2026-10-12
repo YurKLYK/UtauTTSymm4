@@ -1,0 +1,89 @@
+package main
+
+import (
+	"context"
+	"errors"
+
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
+)
+
+type cliResponse struct {
+	OK      bool                `json:"ok"`
+	Result  *cliSynthesisReport `json:"result,omitempty"`
+	Version *cliVersionReport   `json:"version,omitempty"`
+	Error   *cliErrorReport     `json:"error,omitempty"`
+}
+
+type cliSynthesisReport struct {
+	Path          string                    `json:"path"`
+	Reading       string                    `json:"reading"`
+	RendererID    string                    `json:"renderer_id"`
+	DurationMS    float64                   `json:"duration_ms"`
+	SampleRate    int                       `json:"sample_rate"`
+	Channels      int                       `json:"channels"`
+	UnitCount     int                       `json:"unit_count"`
+	PhonemeLabels string                    `json:"phoneme_labels"`
+	Diagnostics   []render.RenderDiagnostic `json:"diagnostics"`
+}
+
+type cliVersionReport struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+type cliErrorReport struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type cliError struct {
+	code string
+	err  error
+}
+
+func (e *cliError) Error() string { return e.err.Error() }
+func (e *cliError) Unwrap() error { return e.err }
+
+func cliFailure(code string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return &cliError{code: code, err: err}
+}
+
+func cliErrorCode(err error) string {
+	switch {
+	case errors.Is(err, context.Canceled):
+		return "canceled"
+	case errors.Is(err, context.DeadlineExceeded):
+		return "deadline_exceeded"
+	case errors.Is(err, synth.ErrUnavailable):
+		return "unavailable"
+	}
+	var classified *cliError
+	if errors.As(err, &classified) {
+		return classified.code
+	}
+	return "synthesis_error"
+}
+
+func cliExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+	if cliErrorCode(err) == "flag_parse_error" {
+		return 2
+	}
+	// Keep existing synthesis and I/O exit codes. --json provides finer detail.
+	return 1
+}
+
+func synthesisReport(path string, output *synth.Result) *cliSynthesisReport {
+	return &cliSynthesisReport{
+		Path: path, Reading: output.Plan.Reading, RendererID: output.RendererID,
+		DurationMS: output.DurationMS, SampleRate: output.Audio.SampleRate,
+		Channels: output.Audio.Channels, UnitCount: len(output.Plan.Units),
+		PhonemeLabels: output.Lab, Diagnostics: output.Diagnostics(),
+	}
+}

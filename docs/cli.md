@@ -69,6 +69,7 @@ printf '%s\n' 'こんにちは。' | utautts-cli --voicebank "voice/足立レイ
 | オプション | 既定値 | 説明 |
 |---|---|---|
 | `--version` | | アプリケーションのバージョンを表示して終了 |
+| `--json` | `false` | 合成結果・診断・エラーをJSONで標準出力へ出す。`--version`にも対応 |
 | `--voicebank <dir>` | | ボイスバンクのディレクトリ（必須） |
 | `--text <文>` | | 合成する文章 |
 | `--text-file <path>` | | UTF-8の文章ファイル。`-`で標準入力 |
@@ -159,6 +160,49 @@ WAVを標準出力へ出す場合、`--write-text`と`--write-lab`は使えま�
 Windows PowerShell 5.1など、外部コマンドの出力を文字列へ変換する環境ではWAVのリダイレクトを避けてください。`--out speech.wav`で直接保存するか、バイナリ出力を保つPowerShell 7.4以降などを使います。
 
 合成・入出力・必須引数のエラーは終了コード1、未知のフラグなどフラグ解析のエラーは2を返します。原音の選択と配置は`--plan-out`で確認できます。
+
+## JSON結果とエラー
+
+`--json`を指定すると、通常の完了表示に代えて1個のJSONオブジェクトを標準出力へ出します。WAVは`--out`のファイルへ保存し、PCMサンプルはJSONには含めません。`--out -`とは併用できません。
+
+```sh
+utautts-cli --json --voicebank "voice/足立レイver3.5.0" --text-file message.txt --out speech.wav
+utautts-cli --json --version
+```
+
+成功時は`ok: true`と`result`を返します。
+
+| `result`の項目 | 内容 |
+| --- | --- |
+| `path` | 指定したWAV保存先 |
+| `reading`・`renderer_id` | 合成に使った読みとRenderer ID |
+| `duration_ms`・`sample_rate`・`channels` | 音声の長さ（ms）、サンプルレート（Hz）、チャンネル数 |
+| `unit_count` | 合成計画のユニット数 |
+| `phoneme_labels` | LABと同じ文字列。各行は開始・終了時刻（100 ns単位）と音素。計画由来で、波形の強制アライメントではない |
+| `diagnostics` | 診断の配列。`message`と、指定されていれば`severity`・`code`を含む。診断なしは空配列 |
+
+音の不足などの警告があっても合成が完了すれば`ok: true`です。`diagnostics`も確認してください。`--version --json`では`result`に代えて`version`内に`name`と`version`を返します。
+
+失敗時は`ok: false`と`error.code`・`error.message`を返します。
+
+```json
+{"ok":false,"error":{"code":"invalid_arguments","message":"--voicebank and --out are required"}}
+```
+
+| `error.code` | 分類 |
+| --- | --- |
+| `invalid_arguments` | 必須引数、併用できない指定、設定の解決に関するエラー |
+| `input_error` | 入力ファイル・標準入力・辞書・編集入力の読込エラー |
+| `unavailable` | 音源・Renderer・モデルなどを利用できないと判定したエラー |
+| `initialization_error` | Runtimeの初期化エラー |
+| `synthesis_error` | 読み解析・合成処理のエラー |
+| `output_error` | WAV・付随ファイル・結果JSONの出力エラー |
+| `shutdown_error` | Runtimeの終了エラー |
+| `canceled`・`deadline_exceeded` | 合成要求のキャンセル・タイムアウト |
+
+フラグ解析が成功してからJSON出力を有効にします。未知のフラグ、不正なフラグ値、`--help`ではJSONを出さず、標準エラーへ説明を出します。stdoutへの書込自体が失敗した場合もJSONを返せないことがあります。
+
+JSONの成否は要求完了とRuntimeの終了後に確定します。失敗するまでに保存できたファイルを自動削除することはありません。終了コードは従来どおりで、フラグ解析の失敗は2、それ以外のエラーは1です。細かい分類は`error.code`で判定します。
 
 ## 手動ピッチとモーラ長
 
