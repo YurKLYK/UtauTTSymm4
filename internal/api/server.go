@@ -12,10 +12,12 @@ import (
 	"net/http"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
 	utautts "github.com/yh2237/UtauTTS"
+	"github.com/yh2237/UtauTTS/internal/appinfo"
 	"github.com/yh2237/UtauTTS/internal/audio"
 	"github.com/yh2237/UtauTTS/internal/diffsinger"
 	"github.com/yh2237/UtauTTS/internal/entryinput"
@@ -145,10 +147,12 @@ func (s *Server) Close() error {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", s.handleHealth)
+	mux.HandleFunc("GET /api/readiness", s.handleReadiness)
 	mux.HandleFunc("GET /api/voicebanks", s.handleListVoicebanks)
 	mux.HandleFunc("POST /api/voicebanks", s.handleRegisterVoicebank)
 	mux.HandleFunc("POST /api/voicebanks/reload", s.handleReloadVoicebanks)
 	mux.HandleFunc("POST /api/synthesize/audio", s.handleSynthesizeAudio)
+	mux.HandleFunc("POST /api/synthesize/result", s.handleSynthesizeResult)
 	mux.HandleFunc("POST /api/synthesize/label", s.handleSynthesizeLabel)
 	mux.HandleFunc("POST /api/synthesize/batch", s.handleSynthesizeBatch)
 	mux.HandleFunc("GET /api/models", s.handleModels)
@@ -273,7 +277,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	if engine == "" {
 		engine = s.pluginCatalog().DefaultRenderer()
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "engine": engine})
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "engine": engine, "version": appinfo.Version()})
 }
 
 func (s *Server) handleModels(w http.ResponseWriter, _ *http.Request) {
@@ -435,6 +439,7 @@ func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "audio/wav")
 	w.Header().Set("X-UtauTTS-Engine", result.RendererID)
 	w.Header().Set("X-UtauTTS-Reading", result.Plan.Reading)
+	w.Header().Set("X-UtauTTS-Diagnostic-Count", strconv.Itoa(len(result.Diagnostics())))
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(audio.PCMToWavBytes(result.Audio)); err != nil {
 		log.Printf("write synthesis response: %v", err)
@@ -455,6 +460,7 @@ func (s *Server) handleSynthesizeLabel(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("X-UtauTTS-Engine", result.RendererID)
 	w.Header().Set("X-UtauTTS-Reading", result.Plan.Reading)
+	w.Header().Set("X-UtauTTS-Diagnostic-Count", strconv.Itoa(len(result.Diagnostics())))
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.WriteString(w, result.Lab); err != nil {
 		log.Printf("write label response: %v", err)

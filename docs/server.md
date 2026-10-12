@@ -45,6 +45,7 @@ xattr -rc "utautts-server" runtime
 | Method | Path | 説明 |
 |---|---|---|
 | `GET` | `/api/health` | 稼働確認 |
+| `GET` | `/api/readiness` | 既定Rendererの資源と音源登録状況の静的検査 |
 | `GET` | `/api/voicebanks` | 音源一覧 |
 | `POST` | `/api/voicebanks` | 音源の登録（既定で無効） |
 | `POST` | `/api/voicebanks/reload` | 音源ディレクトリの再読込 |
@@ -52,6 +53,7 @@ xattr -rc "utautts-server" runtime
 | `GET` | `/api/renderers` | Renderer一覧 |
 | `POST` | `/api/analyze` | 文章から読み・モーラ列への変換 |
 | `POST` | `/api/synthesize/audio` | 単一発話の合成（WAV） |
+| `POST` | `/api/synthesize/result` | 単一発話の音声と結果・診断（JSON） |
 | `POST` | `/api/synthesize/label` | 単一発話の音素ラベル（LAB） |
 | `POST` | `/api/synthesize/batch` | 複数発話の合成（ZIP） |
 
@@ -91,10 +93,25 @@ GET・HEAD以外のリクエストの`Origin`検査は`--auth-token`を設定し
 ### `GET /api/health`
 
 ```json
-{"status":"ok","engine":"utautts-world-phrase"}
+{"status":"ok","engine":"utautts-world-phrase","version":"1.5.1"}
 ```
 
-`engine`には既定RendererのIDが入ります。
+`engine`には既定RendererのID、`version`にはサーバーのバージョンが入ります。これは稼働確認で、合成資源がなくても200を返します。
+
+### `GET /api/readiness`
+
+既定Rendererの静的な資源検査と、登録された音源の件数を返します。必要資源があり、音源が1件以上なら200、それ以外は503です。終了済みRuntimeも503になります。
+
+```json
+{
+  "status": "ready",
+  "renderer_id": "utautts-world-phrase",
+  "renderer": {"available": true},
+  "voicebank_count": 1
+}
+```
+
+不足時は`status: "not_ready"`となり、Rendererの不足理由は`renderer.issues`へ入ります。helperやProviderは起動せず、Open JTalk・辞書・モデル・音源波形や実際の合成は検証しません。特定の発話が合成できることを保証する応答ではありません。
 
 ### `GET /api/voicebanks`
 
@@ -233,6 +250,8 @@ ID順にソートされた音源一覧です。
 
 レスポンスヘッダーの`X-UtauTTS-Reading`に使用した読み、`X-UtauTTS-Engine`にRenderer IDが入ります。
 
+`X-UtauTTS-Diagnostic-Count`には診断の件数が入ります。診断の内容も必要な場合は`/api/synthesize/result`を使います。
+
 #### リクエスト項目
 
 | 項目 | 型 | 既定値 | 説明 |
@@ -323,6 +342,32 @@ ID順にソートされた音源一覧です。
 ### `POST /api/synthesize/label`
 
 `/api/synthesize/audio`と同じJSONを受け取り、合成音声に対応するHTK形式の音素ラベルを`text/plain`で返します。レスポンスには同じ`X-UtauTTS-Engine`と`X-UtauTTS-Reading`ヘッダーが付きます。
+
+`X-UtauTTS-Diagnostic-Count`も返します。ラベルは合成計画由来の100 ns単位の時刻で、波形の強制アライメント結果ではありません。
+
+### `POST /api/synthesize/result`
+
+`/api/synthesize/audio`と同じJSONを受け取り、一度の合成でWAVと結果メタデータ・診断を返します。既存のWAV・LABエンドポイントの応答形式は変わりません。
+
+```json
+{
+  "audio": {"format": "wav_pcm_s16le", "data": "<WAV全体のBase64>"},
+  "result": {
+    "reading": "ア",
+    "renderer_id": "utautts-world-phrase",
+    "duration_ms": 120,
+    "sample_rate": 44100,
+    "channels": 1,
+    "unit_count": 1,
+    "phoneme_labels": "0 1200000 a\n",
+    "diagnostics": []
+  }
+}
+```
+
+`audio.data`をBase64で復号すると、WAVエンドポイントと同じバイト列になります。`result`にはPCMやサーバー上の保存先を含めません。`diagnostics`はRendererの診断と不足音素の警告の配列で、各項目は`severity`・`code`・`message`を持ちます。警告があっても合成成功なら200です。
+
+`phoneme_labels`はLABエンドポイントと同じ計画由来のラベルです。Base64はバイナリより転送量が約3分の1増えるため、音声だけが必要ならWAVエンドポイントを使ってください。
 
 ### `POST /api/synthesize/batch`
 

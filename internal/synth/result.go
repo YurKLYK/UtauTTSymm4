@@ -46,6 +46,26 @@ func (r *Result) Diagnostics() []render.RenderDiagnostic {
 	return diagnostics
 }
 
+// Report is shared metadata for CLI and HTTP outputs; it contains no PCM.
+type Report struct {
+	Reading       string                    `json:"reading"`
+	RendererID    string                    `json:"renderer_id"`
+	DurationMS    float64                   `json:"duration_ms"`
+	SampleRate    int                       `json:"sample_rate"`
+	Channels      int                       `json:"channels"`
+	UnitCount     int                       `json:"unit_count"`
+	PhonemeLabels string                    `json:"phoneme_labels"`
+	Diagnostics   []render.RenderDiagnostic `json:"diagnostics"`
+}
+
+func (r *Result) Report() Report {
+	return Report{
+		Reading: r.Plan.Reading, RendererID: r.RendererID, DurationMS: r.DurationMS,
+		SampleRate: r.Audio.SampleRate, Channels: r.Audio.Channels, UnitCount: len(r.Plan.Units),
+		PhonemeLabels: r.Lab, Diagnostics: r.Diagnostics(),
+	}
+}
+
 type ExportOptions struct {
 	Text         string
 	WriteText    bool

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/yh2237/UtauTTS/internal/render"
 	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
@@ -18,15 +17,8 @@ type cliResponse struct {
 }
 
 type cliSynthesisReport struct {
-	Path          string                    `json:"path"`
-	Reading       string                    `json:"reading"`
-	RendererID    string                    `json:"renderer_id"`
-	DurationMS    float64                   `json:"duration_ms"`
-	SampleRate    int                       `json:"sample_rate"`
-	Channels      int                       `json:"channels"`
-	UnitCount     int                       `json:"unit_count"`
-	PhonemeLabels string                    `json:"phoneme_labels"`
-	Diagnostics   []render.RenderDiagnostic `json:"diagnostics"`
+	Path string `json:"path"`
+	synth.Report
 }
 
 type cliVersionReport struct {
@@ -82,10 +74,5 @@ func cliExitCode(err error) int {
 }
 
 func synthesisReport(path string, output *synth.Result) *cliSynthesisReport {
-	return &cliSynthesisReport{
-		Path: path, Reading: output.Plan.Reading, RendererID: output.RendererID,
-		DurationMS: output.DurationMS, SampleRate: output.Audio.SampleRate,
-		Channels: output.Audio.Channels, UnitCount: len(output.Plan.Units),
-		PhonemeLabels: output.Lab, Diagnostics: output.Diagnostics(),
-	}
+	return &cliSynthesisReport{Path: path, Report: output.Report()}
 }
