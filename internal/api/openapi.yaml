@@ -1,0 +1,715 @@
+openapi: 3.0.3
+info:
+  title: UtauTTS Server HTTP API
+  version: development
+  x-default-max-json-bytes: 1048576
+  description: |
+    現行の開発版HTTP API。アプリケーションのバージョンは /api/health で取得する。
+    --auth-token を設定した場合は全 /api/* でBearer認証が必要。
+    未設定の場合だけ匿名アクセスを許可する。GET・HEAD以外では、トークン設定時にOriginも検査する。
+    JSON本文は単一オブジェクト。未知の項目は400。ただしrenderer_settingsのキーは任意。
+    本文・文字数・配列・一括合成・並列数の上限は起動設定で変更でき、/api/limits が現在値を返す。
+    x-default-* は既定の運用制限で、固定のスキーマ制約ではない。
+    入力のdefaultはJSONデコード時の値。空・ゼロから決まる合成時の既定値は各項目の説明を参照。
+    JSONスキーマだけでは音源・資源・モーラ位置などの合成時検証を表現しきれない。
+    未定義パス・未対応メソッドの404・405はHTTPルーターのテキスト応答。
+    応答書込開始後の通信エラーはJSONに切り替えずログへ記録する。
+servers:
+  - url: /
+security:
+  - bearerAuth: []
+  - {}
+paths:
+  /api/openapi.yaml:
+    get:
+      operationId: getOpenAPI
+      summary: このOpenAPI仕様を取得
+      responses:
+        '200':
+          description: リポジトリのopenapi.yamlと同じUTF-8 YAML
+          content:
+            application/yaml:
+              schema: {type: string}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: 稼働確認
+      description: 資源不足でも200を返す。合成準備状況はreadinessを使う。
+      responses:
+        '200':
+          description: 稼働中
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Health'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/readiness:
+    get:
+      operationId: getReadiness
+      summary: 既定Rendererの静的資源検査と音源登録状況
+      description: |
+        必要資源と音源1件以上で200、不足または終了済みRuntimeは503。
+        helper・Providerを起動せず、Open JTalk・辞書・モデル・波形内容や個々の発話の合成可否は検証しない。
+      responses:
+        '200': &readinessResponse
+          description: 準備状況。503も同じ形式で返す。
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Readiness'}
+        '503': *readinessResponse
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/limits:
+    get:
+      operationId: getLimits
+      summary: 適用中の運用制限
+      responses:
+        '200':
+          description: 適用値。時間はGoのduration表記で0sは無制限。
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Limits'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/voicebanks:
+    get:
+      operationId: listVoicebanks
+      summary: ID順の音源一覧
+      responses:
+        '200': &voicebanksResponse
+          description: 音源一覧。空の場合も配列を返す。
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [voicebanks]
+                properties:
+                  voicebanks:
+                    type: array
+                    items: {$ref: '#/components/schemas/Voicebank'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+    post:
+      operationId: registerVoicebank
+      summary: 音源パスの登録
+      description: 既定は無効。許可時もシンボリックリンク解決後のパスがvoice-dir以下でなければ400。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: {type: string, nullable: true, default: '', description: 空なら音源の表示名}
+                path: {type: string, nullable: true, default: '', description: サーバー上の音源パス。空は作業ディレクトリとして解決するが、通常は明示する。}
+      responses:
+        '200':
+          description: 登録した音源
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Voicebank'}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '413': {$ref: '#/components/responses/LimitExceeded'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/voicebanks/reload:
+    post:
+      operationId: reloadVoicebanks
+      summary: 音源ディレクトリを再走査
+      description: 実行中のRuntime要求の完了を待って自分の資源を再読込する。Rendererとモデルのカタログは再探索しない。
+      responses:
+        '200': *voicebanksResponse
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/models:
+    get:
+      operationId: listModels
+      summary: 抑揚モデル一覧
+      responses:
+        '200':
+          description: 起動時のモデルカタログ
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [models]
+                properties:
+                  models:
+                    type: array
+                    nullable: true
+                    items: {$ref: '#/components/schemas/Model'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/renderers:
+    get:
+      operationId: listRenderers
+      summary: Renderer・Classicツール・資源利用可否の一覧
+      description: 起動時のカタログと静的資源検査。helper・Providerは起動しない。要素がない配列はnullになる場合がある。
+      responses:
+        '200':
+          description: Rendererカタログ
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RendererCatalog'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/analyze:
+    post:
+      operationId: analyze
+      summary: 日本語の文章を読みとモーラ列へ変換
+      description: 英語・中国語は合成要求でlanguageとphonemizerを指定する。合成と同じ並列枠・期限を使う。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [text]
+              properties:
+                text: {type: string, minLength: 1, x-default-maxLength: 500}
+                dictionary:
+                  type: array
+                  nullable: true
+                  items: {$ref: '#/components/schemas/DictionaryEntry'}
+      responses:
+        '200':
+          description: 読みとモーラ列
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Analysis'}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '408': {$ref: '#/components/responses/Timeout'}
+        '413': {$ref: '#/components/responses/LimitExceeded'}
+        '422': {$ref: '#/components/responses/SynthesisError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/synthesize/audio:
+    post: &synthesisOperation
+      operationId: synthesizeAudio
+      summary: 単一発話をWAVへ合成
+      requestBody: {$ref: '#/components/requestBodies/Synthesis'}
+      responses: &synthesisResponses
+        '200':
+          description: 合成完了後のWAV全体。低遅延ストリーミングではない。
+          headers: &synthesisHeaders
+            X-UtauTTS-Engine:
+              description: Renderer ID
+              schema: {type: string}
+            X-UtauTTS-Reading:
+              description: 使用した読み
+              schema: {type: string}
+            X-UtauTTS-Diagnostic-Count:
+              description: Renderer診断と不足音素の警告の件数
+              schema: {type: integer, minimum: 0}
+          content:
+            audio/wav:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '408': {$ref: '#/components/responses/Timeout'}
+        '413': {$ref: '#/components/responses/LimitExceeded'}
+        '422': {$ref: '#/components/responses/SynthesisError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/synthesize/label:
+    post:
+      <<: *synthesisOperation
+      operationId: synthesizeLabel
+      summary: 単一発話の音素ラベルを取得
+      responses:
+        <<: *synthesisResponses
+        '200':
+          description: 計画由来のHTK形式LAB。100 ns単位。波形の強制アライメントではない。
+          headers: *synthesisHeaders
+          content:
+            text/plain:
+              schema: {type: string}
+  /api/synthesize/result:
+    post:
+      <<: *synthesisOperation
+      operationId: synthesizeResult
+      summary: 一度の合成でWAVと結果・診断をJSONで取得
+      responses:
+        <<: *synthesisResponses
+        '200':
+          description: 警告があっても合成成功なら200。PCMやサーバー上の保存先は含まない。
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SynthesisResponse'}
+  /api/synthesize/batch:
+    post:
+      operationId: synthesizeBatch
+      summary: 複数発話をWAV・任意のTXTとLABのZIPで取得
+      description: |
+        逐次合成。途中で失敗すると後続を合成せず、item Nを含むエラーを返す。
+        ZIPは完成後に送信し、途中のZIPは返さない。要求全体で一つの合成期限を使う。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BatchRequest'}
+      responses:
+        '200':
+          description: 非圧縮WAV合計は既定256 MiB。上限は /api/limits を参照。
+          headers:
+            Content-Disposition:
+              schema: {type: string, example: 'attachment; filename="utautts-audio.zip"'}
+          content:
+            application/zip:
+              schema: {type: string, format: binary}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '408': {$ref: '#/components/responses/Timeout'}
+        '413': {$ref: '#/components/responses/LimitExceeded'}
+        '422': {$ref: '#/components/responses/SynthesisError'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: --auth-token 設定時のみ必須。未設定のサーバーは匿名アクセスを許可する。
+  requestBodies:
+    Synthesis:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/SynthesisRequest'}
+          example: {reading: ア, apply_pitch: false}
+  responses:
+    InvalidRequest:
+      description: JSON・必須項目・範囲等の入力不正はinvalid_request。資源不足は既存の400を維持してunavailable。
+      content: &errorContent
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unauthorized:
+      description: Bearerトークンがない・一致しない。codeはunauthorized。
+      content: *errorContent
+    Forbidden:
+      description: Origin不一致または音源登録が無効。codeはforbidden。
+      content: *errorContent
+    Timeout:
+      description: 要求キャンセルはcanceled、要求の期限切れはdeadline_exceeded。切断後は受信できない場合がある。
+      content: *errorContent
+    LimitExceeded:
+      description: 本文・文字数・編集要素・一括合成の上限超過。codeはlimit_exceeded。
+      content: *errorContent
+    SynthesisError:
+      description: 読み解析・合成の失敗。codeはsynthesis_error。
+      content: *errorContent
+    InternalError:
+      description: 再読込・一時ファイル・ZIP出力等の失敗。codeはinternal_error。
+      content: *errorContent
+    Unavailable:
+      description: 終了済みRuntimeはunavailable、処理枠の待機期限超過はqueue_timeout。
+      content: *errorContent
+  schemas:
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error: {type: string, description: 既存クライアント向けの説明文字列。一括合成ではitem Nを含む。}
+        code:
+          type: string
+          enum: [invalid_request, limit_exceeded, unavailable, synthesis_error, canceled, deadline_exceeded, queue_timeout, unauthorized, forbidden, internal_error]
+    SynthesisRequest:
+      type: object
+      additionalProperties: false
+      description: |
+        textか有効な読みが必須。readingが空でなければkanaより優先し、読みがあればtextより優先する。
+        通常設定は直下、方式固有値はrenderer_settings。共通設定をmapに置く従来の互換指定も受け取り、map側を優先する。
+        nullのスカラーはデコード済みの既定値を変えない。nullの配列・任意オブジェクトは未指定扱い。
+      anyOf:
+        - required: [text]
+          properties: {text: {type: string, minLength: 1}}
+        - required: [reading]
+          properties: {reading: {type: string, minLength: 1}}
+        - required: [kana]
+          properties: {kana: {type: string, minLength: 1}}
+      properties:
+        text: {type: string, nullable: true, default: '', x-default-maxLength: 500}
+        reading: {type: string, nullable: true, default: '', x-default-maxLength: 500}
+        kana: {type: string, nullable: true, default: '', x-default-maxLength: 500, deprecated: true, description: readingの互換名。readingが空の場合に使う。}
+        language: {type: string, nullable: true, default: '', description: 'ja・en・zh。空なら音源・phonemizerから選び、決まらなければja。'}
+        phonemizer: {type: string, nullable: true, default: '', description: 'ja-kana・en-arpasing・en-delta・en-vccv・en-cv・zh-cvvc。空なら自動選択。'}
+        voicebank_id: {type: string, nullable: true, default: '', description: 空ならID順先頭の登録音源}
+        renderer: {type: string, nullable: true, default: '', description: 空なら起動時の既定Renderer。未知の明示IDはエラー。}
+        model_id: {type: string, nullable: true, default: '', description: 抑揚モデルID。空またはnoneなら使わない。}
+        model_path: {type: string, nullable: true, default: '', description: ローカルモデルパスの互換入力。model_idより優先する。}
+        tone: {type: string, nullable: true, default: '', description: 空なら合成時にC4}
+        color: {type: string, nullable: true, default: ''}
+        dictionary:
+          type: array
+          nullable: true
+          items: {$ref: '#/components/schemas/DictionaryEntry'}
+        mora_duration_ms: {type: number, nullable: true, default: 120, minimum: 0, maximum: 1000, description: 基本モーラ長。ゼロは合成時の既定値を使う。}
+        pause_duration_ms: {type: number, nullable: true, default: 180, minimum: 0, maximum: 3000, description: 休止長。明示ゼロも合成時の既定値扱い。}
+        intonation_strength: {type: number, nullable: true, default: 4, minimum: 0, maximum: 8}
+        apply_pitch: {type: boolean, nullable: true, default: true}
+        context_duration: {type: boolean, nullable: true, default: false}
+        boundary_tone: {type: boolean, nullable: true, default: true}
+        stretch_adapt: {type: boolean, nullable: true, default: true}
+        pause_context: {type: boolean, nullable: true, default: true}
+        english_weak_form: {type: boolean, nullable: true, default: true}
+        renderer_settings:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: 任意のRenderer設定map。既知IDの型不一致などは既存の診断規則で扱う。未知IDもProviderへ渡す。
+        mora_durations_ms:
+          type: array
+          nullable: true
+          x-default-maxItems: 500
+          items: {type: number, minimum: 0, maximum: 1000}
+        unit_overrides:
+          type: array
+          nullable: true
+          items: {$ref: '#/components/schemas/UnitOverride'}
+        manual_pitch:
+          $ref: '#/components/schemas/ManualPitch'
+        pitch_curve:
+          $ref: '#/components/schemas/PitchCurve'
+        resampler_expressions:
+          type: array
+          nullable: true
+          x-default-maxItems: 500
+          items: {$ref: '#/components/schemas/ResamplerExpression'}
+        resampler: {type: string, nullable: true, default: '', description: Classic UTAUのResamplers相対ID。空なら自動選択。}
+        wavtool: {type: string, nullable: true, default: builtin}
+        alias_policy: {type: string, nullable: true, default: '', description: '空またはauto・cvvc-enhanced・vcv-prefer・cvvc-prefer・cv-only。'}
+        leading_preutterance_ms: {type: number, nullable: true, default: 0, minimum: 0, maximum: 1000, description: ゼロならoto.iniから決定}
+        release_ms: {type: number, nullable: true, default: 0, description: release_setがtrueのときだけ使う。未指定時の合成リリースは20 ms。}
+        release_set: {type: boolean, nullable: true, default: false, description: trueならrelease_msの明示ゼロも適用}
+        context_duration_strength: {type: number, nullable: true, default: 1, description: 互換入力。ゼロは合成時の既定値1。}
+        boundary_tone_strength: {type: number, nullable: true, default: 1, description: 互換入力。ゼロは合成時の既定値1。}
+        stretch_adapt_strength: {type: number, nullable: true, default: 1, description: 互換入力。ゼロは合成時の既定値1。}
+        pause_context_strength: {type: number, nullable: true, default: 1, description: 互換入力。ゼロは合成時の既定値1。}
+        diffsinger_steps: {type: integer, format: int64, nullable: true, default: 0, description: ゼロならProviderの既定値}
+        diffsinger_duration_mix: {type: number, nullable: true, default: 0, description: ゼロならProviderの既定値}
+        diffsinger_pitch_mix: {type: number, nullable: true, default: 0, description: ゼロならProviderの既定値}
+        diffsinger_expr: {type: number, nullable: true, default: 0, description: ゼロならProviderの既定値}
+        worldline:
+          $ref: '#/components/schemas/Worldline'
+        speech_timing: {type: boolean, nullable: true, default: false, deprecated: true, description: 受け取るが使わない}
+        word_boundary_envelope: {type: boolean, nullable: true, default: false, deprecated: true, description: 受け取るが使わない}
+        prosody_experiment: {type: string, nullable: true, default: '', deprecated: true, description: 受け取るが使わない}
+    DictionaryEntry:
+      type: object
+      additionalProperties: false
+      description: 空のsurfaceまたはreadingを持つ項目は辞書へ追加しない。
+      properties:
+        surface: {type: string, nullable: true, default: ''}
+        reading: {type: string, nullable: true, default: ''}
+    ManualPitch:
+      type: object
+      nullable: true
+      additionalProperties: false
+      required: [version]
+      description: モーラ位置・重複・休止への指定は合成時にも検証する。framesモードはpointsと併用不可。
+      properties:
+        version: {type: integer, enum: [1]}
+        reading: {type: string, nullable: true, default: ''}
+        mode: {type: string, nullable: true, default: '', description: 空ならoffset。offset・replace・framesに対応。}
+        points:
+          type: array
+          nullable: true
+          x-default-maxItems: 1000
+          items: {$ref: '#/components/schemas/ManualPitchPoint'}
+        frames:
+          type: array
+          nullable: true
+          description: framesモードでは最大20000個、10 ms単位、各値±1200 cent。その他のモードでは使わない。
+          items: {type: number}
+    ManualPitchPoint:
+      type: object
+      additionalProperties: false
+      properties:
+        position: {type: integer, nullable: true, minimum: 0, default: 0}
+        mora: {type: string, nullable: true, default: ''}
+        cents: {type: number, nullable: true, minimum: -1200, maximum: 1200, default: 0}
+    PitchCurve:
+      type: object
+      nullable: true
+      additionalProperties: false
+      properties:
+        frame_ms: {type: number, nullable: true}
+        cents: {type: array, nullable: true, items: {type: number}}
+    UnitOverride:
+      type: object
+      additionalProperties: false
+      description: 原音単位の編集。unit_indexの範囲・重複は合成時に検証する。
+      properties:
+        unit_index: {type: integer, nullable: true, minimum: 0, default: 0}
+        offset_ms: {type: number, nullable: true}
+        cutoff_ms: {type: number, nullable: true}
+        consonant_ms: {type: number, nullable: true, minimum: 0}
+        preutterance_ms: {type: number, nullable: true, minimum: 0}
+        overlap_ms: {type: number, nullable: true, minimum: 0}
+        pitch_factor: {type: number, nullable: true, minimum: 0, exclusiveMinimum: true}
+        energy_factor: {type: number, nullable: true, minimum: 0, exclusiveMinimum: true}
+        resampler_velocity: {type: integer, nullable: true, minimum: 0, maximum: 200}
+        resampler_volume: {type: integer, nullable: true, minimum: 0, maximum: 200}
+        resampler_flags: {type: string, nullable: true, description: 空白不可}
+        resampler_modulation: {type: integer, nullable: true, minimum: 0, maximum: 100}
+        resampler_tempo: {type: number, nullable: true, minimum: 0, exclusiveMinimum: true, maximum: 1000}
+    ResamplerExpression:
+      type: object
+      additionalProperties: false
+      properties:
+        position: {type: integer, nullable: true, default: 0}
+        velocity: {type: integer, nullable: true}
+        volume: {type: integer, nullable: true}
+        flags: {type: string, nullable: true}
+        modulation: {type: integer, nullable: true}
+        tempo: {type: number, nullable: true}
+    Worldline:
+      type: object
+      nullable: true
+      additionalProperties: false
+      properties:
+        source_phone_mapping: {type: boolean, nullable: true, description: 未指定時は有効}
+        timing_warp: {type: boolean, nullable: true, description: 未指定時は有効}
+        microprosody: {type: boolean, nullable: true, description: 未指定時は有効}
+        ExactLength: {type: boolean, nullable: true, default: false, deprecated: true, description: 既存のホスト制御フィールド。通常は指定しない。}
+    BatchRequest:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        write_text: {type: boolean, nullable: true, default: false}
+        write_lab: {type: boolean, nullable: true, default: false}
+        text_encoding: {type: string, nullable: true, default: '', description: TXT書込時は空またはutf-8・shift_jis}
+        items:
+          type: array
+          minItems: 1
+          x-default-maxItems: 16
+          items:
+            type: object
+            additionalProperties: false
+            required: [request]
+            properties:
+              name: {type: string, nullable: true, default: '', description: 'パス部分を除去し、.wavを補う。空・..等はutterance-N.wav。重複は400。'}
+              request: {$ref: '#/components/schemas/SynthesisRequest'}
+    SynthesisResponse:
+      type: object
+      required: [result, audio]
+      properties:
+        result: {$ref: '#/components/schemas/SynthesisReport'}
+        audio:
+          type: object
+          required: [format, data]
+          properties:
+            format: {type: string, enum: [wav_pcm_s16le]}
+            data: {type: string, format: byte, description: WAV全体のBase64。WAVエンドポイントと同じバイト列。}
+    SynthesisReport:
+      type: object
+      required: [reading, renderer_id, duration_ms, sample_rate, channels, unit_count, phoneme_labels, diagnostics]
+      properties:
+        reading: {type: string}
+        renderer_id: {type: string}
+        duration_ms: {type: number}
+        sample_rate: {type: integer}
+        channels: {type: integer}
+        unit_count: {type: integer}
+        phoneme_labels: {type: string, description: 計画由来のHTKラベル。100 ns単位。波形の強制アライメントではない。}
+        diagnostics: {type: array, items: {$ref: '#/components/schemas/Diagnostic'}}
+    Diagnostic:
+      type: object
+      required: [message]
+      properties:
+        severity: {type: string, description: 省略される場合もある。通常info・warning・error。}
+        code: {type: string, description: Renderer診断のIDまたはmissing-phones。省略される場合もある。}
+        message: {type: string}
+    Health:
+      type: object
+      required: [status, engine, version]
+      properties:
+        status: {type: string, enum: [ok]}
+        engine: {type: string}
+        version: {type: string}
+    Readiness:
+      type: object
+      required: [status, renderer_id, renderer, voicebank_count]
+      properties:
+        status: {type: string, enum: [ready, not_ready]}
+        renderer_id: {type: string}
+        renderer: {$ref: '#/components/schemas/Availability'}
+        voicebank_count: {type: integer, minimum: 0}
+    Availability:
+      type: object
+      required: [available]
+      properties:
+        available: {type: boolean}
+        issues:
+          type: array
+          items: {$ref: '#/components/schemas/AvailabilityIssue'}
+    AvailabilityIssue:
+      type: object
+      required: [message]
+      properties:
+        resource: {type: string}
+        message: {type: string}
+    Limits:
+      type: object
+      required: [max_json_request_bytes, max_text_runes, max_batch_items, max_batch_wav_bytes, max_manual_pitch_points, max_concurrent_synthesis, max_concurrent_batches, queue_timeout, synthesis_timeout]
+      description: |
+        時間の0sは無制限。queue_timeoutは処理枠ごと、synthesis_timeoutはJSON読込後の待機を含む解析・合成全体。
+        一括合成の発話ごとにはリセットしない。同期I/O・Runtime再読込の待機・応答書込・終了処理の強制打切りではない。
+        ネットワークの既存read timeout 30秒・write timeout 10分は別に適用される。メモリ使用量の上限ではない。
+      properties:
+        max_json_request_bytes: {type: integer, format: int64, minimum: 1, default: 1048576}
+        max_text_runes: {type: integer, minimum: 1, default: 500}
+        max_batch_items: {type: integer, minimum: 1, default: 16}
+        max_batch_wav_bytes: {type: integer, format: int64, minimum: 1, default: 268435456}
+        max_manual_pitch_points: {type: integer, minimum: 1, default: 1000}
+        max_concurrent_synthesis: {type: integer, minimum: 1, default: 4}
+        max_concurrent_batches: {type: integer, minimum: 1, default: 2}
+        queue_timeout: {type: string, default: 0s}
+        synthesis_timeout: {type: string, default: 0s}
+    Analysis:
+      type: object
+      required: [reading, morae]
+      properties:
+        reading: {type: string}
+        morae:
+          type: array
+          items:
+            type: object
+            required: [position, mora, consonant, vowel, pause]
+            properties:
+              position: {type: integer}
+              mora: {type: string}
+              consonant: {type: string}
+              vowel: {type: string}
+              pause: {type: boolean}
+    Voicebank:
+      type: object
+      required: [id, name, path, oto_file_count, phoneme_count, diagnostic_count, alias_counts, vcv_contexts, vc_contexts, has_vc, has_initial_vcv, has_n_context_vcv]
+      properties:
+        id: {type: string, description: voice-dirからの相対パス。入れ子はスラッシュ区切り。}
+        name: {type: string}
+        path: {type: string}
+        kind: {type: string}
+        types: {type: array, items: {$ref: '#/components/schemas/SubbankOption'}}
+        oto_file_count: {type: integer}
+        phoneme_count: {type: integer}
+        diagnostic_count: {type: integer}
+        alias_counts: {type: object, nullable: true, additionalProperties: {type: integer}}
+        vcv_contexts: {type: object, nullable: true, additionalProperties: {type: integer}}
+        vc_contexts: {type: object, nullable: true, additionalProperties: {type: integer}}
+        has_vc: {type: boolean}
+        has_initial_vcv: {type: boolean}
+        has_n_context_vcv: {type: boolean}
+    SubbankOption:
+      type: object
+      required: [id, color]
+      properties:
+        id: {type: string}
+        color: {type: string}
+        prefix: {type: string}
+        suffix: {type: string}
+        tone_ranges:
+          type: array
+          items:
+            type: object
+            required: [low, high]
+            properties: {low: {type: integer}, high: {type: integer}}
+    Model:
+      type: object
+      required: [id, display_name, path, version, feature_version, mode, sha256]
+      properties:
+        id: {type: string}
+        display_name: {type: string}
+        description: {type: string}
+        language: {type: string}
+        path: {type: string}
+        version: {type: integer}
+        feature_version: {type: integer}
+        mode: {type: string}
+        sha256: {type: string}
+        outputs: {type: object, additionalProperties: {type: boolean}}
+        recommended_renderers: {type: array, items: {type: string}}
+        default_priority: {type: integer}
+        requires_features: {type: boolean}
+        frame_contour: {type: boolean}
+    RendererCatalog:
+      type: object
+      required: [default_renderer, renderers, availability, problems, resamplers, wavtools]
+      properties:
+        default_renderer: {type: string}
+        renderers: {type: array, nullable: true, items: {$ref: '#/components/schemas/Renderer'}}
+        availability: {type: object, additionalProperties: {$ref: '#/components/schemas/Availability'}}
+        problems: {type: array, nullable: true, items: {type: string}}
+        resamplers: {type: array, nullable: true, items: {$ref: '#/components/schemas/ClassicTool'}}
+        wavtools: {type: array, nullable: true, items: {$ref: '#/components/schemas/ClassicTool'}}
+    Renderer:
+      type: object
+      required: [manifest_version, kind, id, display_name]
+      properties:
+        $schema: {type: string}
+        manifest_version: {type: integer}
+        kind: {type: string}
+        id: {type: string}
+        display_name: {type: string}
+        description: {type: string}
+        contract: {type: string}
+        contract_version: {type: integer}
+        provider: {type: string}
+        provider_version: {type: string}
+        protocol: {type: string}
+        protocol_version: {type: integer}
+        provider_args: {type: array, items: {type: string}}
+        experimental: {type: boolean}
+        acceleration: {type: string}
+        default_priority: {type: integer}
+        update_managed: {type: boolean}
+        capabilities: {$ref: '#/components/schemas/Capabilities'}
+        resources: {type: object, additionalProperties: {$ref: '#/components/schemas/RendererResource'}}
+        platform_resources: {type: object, additionalProperties: {type: object, additionalProperties: {$ref: '#/components/schemas/RendererResource'}}}
+        platforms: {type: array, items: {type: string}}
+        settings: {type: array, items: {$ref: '#/components/schemas/RendererSetting'}}
+    Capabilities:
+      type: object
+      properties:
+        frame_pitch: {type: boolean}
+        boundary_bridge: {type: boolean}
+        internal_timing: {type: boolean}
+        speech_prosody_experiment: {type: boolean, deprecated: true}
+    RendererResource:
+      type: object
+      properties:
+        path: {type: string}
+        required: {type: boolean}
+        executable: {type: boolean}
+    RendererSetting:
+      type: object
+      required: [id, type]
+      properties:
+        id: {type: string}
+        type: {type: string}
+        group: {type: string}
+        default: {}
+        min: {type: number}
+        max: {type: number}
+        step: {type: number}
+        label: {type: string}
+        options: {type: array, items: {$ref: '#/components/schemas/RendererSettingValue'}}
+        options_source: {type: string}
+    RendererSettingValue:
+      type: object
+      required: [value]
+      properties:
+        value: {type: string}
+        label: {type: string}
+    ClassicTool:
+      type: object
+      required: [id, display_name]
+      properties:
+        id: {type: string}
+        display_name: {type: string}
+        path: {type: string}
+        built_in: {type: boolean}

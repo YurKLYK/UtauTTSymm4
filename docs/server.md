@@ -47,6 +47,7 @@ xattr -rc "utautts-server" runtime
 | `GET` | `/api/health` | 稼働確認 |
 | `GET` | `/api/readiness` | 既定Rendererの資源と音源登録状況の静的検査 |
 | `GET` | `/api/limits` | 適用中の運用制限 |
+| `GET` | `/api/openapi.yaml` | OpenAPI仕様（YAML） |
 | `GET` | `/api/voicebanks` | 音源一覧 |
 | `POST` | `/api/voicebanks` | 音源の登録（既定で無効） |
 | `POST` | `/api/voicebanks/reload` | 音源ディレクトリの再読込 |
@@ -70,6 +71,20 @@ xattr -rc "utautts-server" runtime
 - 合成・読み解析は既定で合計4並行、batchはさらに最大2並行です。超過分は空きを待ちます。待機順の保証はありません。
 
 これらの上限は[起動オプション](#起動オプション)で変更でき、適用中の値は`/api/limits`で取得できます。
+
+### OpenAPI
+
+[OpenAPI 3.0.3のYAML](../internal/api/openapi.yaml)に、HTTPの入力・既定値・応答・認証・エラーを記録しています。サーバーからは`GET /api/openapi.yaml`で同じ内容を取得できます。`--auth-token`を設定している場合は、このエンドポイントにもBearerトークンが必要です。
+
+```sh
+curl -H "Authorization: Bearer <token>" http://127.0.0.1:8080/api/openapi.yaml -o openapi.yaml
+```
+
+仕様の`info.version`は`development`で、アプリケーションのバージョンは`/api/health`で取得します。上限を表す`x-default-*`は既定の運用設定です。固定の`maxLength`・`maxItems`制約にはせず、現在の上限は`/api/limits`を参照します。
+
+入力の`default`はJSONデコード時の値です。合成時に空・ゼロから補う値とは区別しています。例えば`tone`の空文字は合成時にC4となり、`release_set`が偽なら`release_ms`のデコード値0を使わず既定の20 msになります。通常入力・編集・互換入力を同じ要求スキーマに含め、任意の`renderer_settings`も受け取ります。
+
+OpenAPIの追加によって入力の検証規則は変えていません。音源・資源の不足やモーラ位置などは実際の要求処理でも検証します。
 
 ### 認証
 
@@ -285,7 +300,7 @@ ID順にソートされた音源一覧です。
 | `text` | string | | 合成する文章。`reading` とどちらか一方が必須 |
 | `reading` | string | | かな、ARPAbet、またはPinyinを直接指定 |
 | `kana` | string | | `reading`と同じ入力を受け付ける互換用の別名 |
-| `language` | string | `ja` | 言語。`ja`、`en`、`zh`。空欄なら日本語 |
+| `language` | string | 自動選択 | `ja`、`en`、`zh`。空欄なら音源・phonemizerから選び、決まらなければ日本語 |
 | `phonemizer` | string | 言語から自動選択 | `ja-kana`、`en-arpasing`、`en-delta`、`en-vccv`、`en-cv`、`zh-cvvc`。言語に対応しない組み合わせはエラー |
 | `voicebank_id` | string | ID順先頭 | `GET /api/voicebanks` の `id` |
 | `tone` | string | `C4` | `prefix.map` 使用時の音階 |
