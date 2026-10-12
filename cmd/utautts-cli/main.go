@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	utautts "github.com/yh2237/UtauTTS"
 	"github.com/yh2237/UtauTTS/internal/appinfo"
@@ -104,11 +105,13 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		jsonOutput               bool
 		listKind                 string
 		doctor                   bool
+		timeout                  time.Duration
 	)
 	flag.BoolVar(&showVersion, "version", false, "print application version")
 	flag.BoolVar(&jsonOutput, "json", false, "print result, catalog, doctor, version or error JSON to standard output")
 	flag.StringVar(&listKind, "list", "", "list voicebanks, models, renderers, resamplers or wavtools without synthesizing")
 	flag.BoolVar(&doctor, "doctor", false, "inspect selected resources without starting helpers or synthesizing")
+	flag.DurationVar(&timeout, "timeout", 0, "synthesis timeout after input and initialization (e.g. 30s; 0 disables)")
 	flag.StringVar(&voicebankPath, "voicebank", "", "path to a UTAU voicebank directory")
 	flag.StringVar(&reading, "kana", "", "kana reading to synthesize")
 	flag.StringVar(&reading, "reading", "", "pronunciation to synthesize (kana, ARPAbet, or Pinyin)")
@@ -197,6 +200,9 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		}
 		_, err := fmt.Fprintf(stdout, "%s %s\n", appinfo.Name(), appinfo.Version())
 		return cliFailure("output_error", err)
+	}
+	if timeout < 0 {
+		return cliFailure("invalid_arguments", errors.New("--timeout must not be negative"))
 	}
 	runtimeConfig := synth.RuntimeConfig{
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
@@ -320,6 +326,11 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	defer func() { runErr = errors.Join(runErr, cliFailure("shutdown_error", runtime.Close())) }()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
 	ctx, release, err := runtime.Begin(ctx)
 	if err != nil {
 		return cliFailure("synthesis_error", err)
@@ -393,6 +404,9 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		synthesisRequest.CVVCTiming = cvvcTiming
 		synthesisRequest.CVVCTransitionGain = cvvcTransitionGain
 	}
+	if err := ctx.Err(); err != nil {
+		return cliFailure("synthesis_error", err)
+	}
 	resolvedSynthesis, err := resolver.ResolveSynthesis(synthesisRequest)
 	if err != nil {
 		return cliFailure("invalid_arguments", err)
@@ -400,6 +414,9 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	resolvedSynthesis.Config.Context = ctx
 	output, err := synth.SynthesizeResolved(resolvedSynthesis)
 	if err != nil {
+		return cliFailure("synthesis_error", err)
+	}
+	if err := ctx.Err(); err != nil {
 		return cliFailure("synthesis_error", err)
 	}
 	exportText := text
@@ -425,8 +442,12 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	}
 	if ustxOut != "" {
 		project := ustxProjectFromSynthesis(resolvedSynthesis.Config, output.Plan, filepath.Base(filepath.Clean(voicebankPath)))
+		curves := ustxFrameCurves(resolvedSynthesis.Config, 1)
+		if err := ctx.Err(); err != nil {
+			return cliFailure("synthesis_error", err)
+		}
 		data, err := openutau.ExportUSTX(project, openutau.ExportOptions{
-			Curves: ustxFrameCurves(resolvedSynthesis.Config, 1),
+			Curves: curves,
 		})
 		if err != nil {
 			return cliFailure("output_error", err)
@@ -436,6 +457,9 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		}
 	}
 
+	if err := ctx.Err(); err != nil {
+		return cliFailure("synthesis_error", err)
+	}
 	duration := output.DurationMS / 1000
 	summary := stdout
 	if outPath == "-" {
