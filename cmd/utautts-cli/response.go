@@ -12,6 +12,7 @@ type cliResponse struct {
 	OK      bool                `json:"ok"`
 	Result  *cliSynthesisReport `json:"result,omitempty"`
 	Version *cliVersionReport   `json:"version,omitempty"`
+	Catalog *cliCatalogReport   `json:"catalog,omitempty"`
 	Error   *cliErrorReport     `json:"error,omitempty"`
 }
 

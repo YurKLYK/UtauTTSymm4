@@ -102,9 +102,11 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		textEncoding             string
 		showVersion              bool
 		jsonOutput               bool
+		listKind                 string
 	)
 	flag.BoolVar(&showVersion, "version", false, "print application version")
-	flag.BoolVar(&jsonOutput, "json", false, "print result, version or error JSON to standard output")
+	flag.BoolVar(&jsonOutput, "json", false, "print result, catalog, version or error JSON to standard output")
+	flag.StringVar(&listKind, "list", "", "list voicebanks, models, renderers, resamplers or wavtools without synthesizing")
 	flag.StringVar(&voicebankPath, "voicebank", "", "path to a UTAU voicebank directory")
 	flag.StringVar(&reading, "kana", "", "kana reading to synthesize")
 	flag.StringVar(&reading, "reading", "", "pronunciation to synthesize (kana, ARPAbet, or Pinyin)")
@@ -194,6 +196,31 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		_, err := fmt.Fprintf(stdout, "%s %s\n", appinfo.Name(), appinfo.Version())
 		return cliFailure("output_error", err)
 	}
+	runtimeConfig := synth.RuntimeConfig{
+		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
+		OpenJTalkPath: openJTalkPath, OpenJTalkDictionary: openJTalkDictionaryPath,
+		RendererDirectories: rendererDirectories, ModelDirectories: modelDirectories,
+	}
+	if listKind != "" {
+		var conflict string
+		flag.Visit(func(option *flagpkg.Flag) {
+			if !catalogFlags[option.Name] && conflict == "" {
+				conflict = option.Name
+			}
+		})
+		if conflict != "" {
+			return cliFailure("invalid_arguments", fmt.Errorf("--list cannot be combined with --%s", conflict))
+		}
+		catalog, err := loadCatalog(listKind, voicebankPath, runtimeConfig)
+		if err != nil {
+			return err
+		}
+		if jsonOutput {
+			report.Catalog = catalog
+			return nil
+		}
+		return cliFailure("output_error", writeCatalog(stdout, catalog))
+	}
 	if voicebankPath == "" || outPath == "" {
 		if !jsonOutput {
 			flag.Usage()
@@ -264,11 +291,7 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		}
 		return cliFailure("invalid_arguments", errors.New("either --text, --reading, --text-file, --reading-file or --request is required"))
 	}
-	runtime, err := synth.NewRuntime(synth.RuntimeConfig{
-		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
-		OpenJTalkPath: openJTalkPath, OpenJTalkDictionary: openJTalkDictionaryPath,
-		RendererDirectories: rendererDirectories, ModelDirectories: modelDirectories,
-	}, nil)
+	runtime, err := synth.NewRuntime(runtimeConfig, nil)
 	if err != nil {
 		return cliFailure("initialization_error", err)
 	}

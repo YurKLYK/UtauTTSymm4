@@ -6,6 +6,8 @@
 
 ## 必須の引数
 
+合成時は次の引数を指定します。一覧取得とバージョン表示には不要です。
+
 - `--voicebank <dir>`: UTAUボイスバンクのディレクトリ
 - `--out <path>`: 出力WAVのパス。`-`で標準出力へ出す
 - `--text <文>`または`--reading <読み>`: 合成する文章または読み。UTF-8ファイルや標準入力からも読み込める
@@ -88,13 +90,40 @@ JSON要求と発話フラグ（`--text`・`--reading`・`--renderer`・`--prosod
 
 未知の要求項目や複数オブジェクトは入力エラーです。`renderer_settings`内の未知IDはRendererへ渡し、型不一致などは既存のHTTP入力と同じ診断規則で扱います。休止のゼロは既定値扱い、リリースの明示ゼロには`release_set: true`を使う互換規則も共通です。
 
+## 音源・モデル・Rendererの一覧
+
+`--list`は合成せずに一覧を返します。`--out`や発話の指定は不要で、併用すると入力エラーになります。
+
+```sh
+utautts-cli --list voicebanks --voicebank voice
+utautts-cli --list models --json
+utautts-cli --list renderers --json
+utautts-cli --list resamplers
+utautts-cli --list wavtools
+```
+
+音源の一覧では`--voicebank`を探索元として使い、単一音源のディレクトリも指定できます。省略時は既存の`voice/`探索規則を使います。モデル・Rendererの追加探索先は`--model-dir`・`--renderer-dir`、WORLD bridgeの配置は`--worldline-bridge`で指定できます。
+
+`--json`を付けると`ok: true`と`catalog`を返します。`catalog.kind`は一覧の種類、`items`は要素の配列、`problems`はカタログ読込時の警告です。該当項目がない場合も空配列で成功します。
+
+| 項目 | 内容 |
+| --- | --- |
+| `id`・`name` | IDと表示名 |
+| `path` | 音源・Rendererのディレクトリ、モデル・Classicツールのファイルパス。該当する場合だけ含む |
+| `language`・`voicebank_kind` | モデルの言語、音源の種類。該当する場合だけ含む |
+| `provider`・`available`・`problems` | RendererのProviderと資源の利用可否、不足等の説明 |
+| `catalog.default_id` | 既定のRendererまたはClassicツール。モデルは既定で使わないため`none` |
+
+Rendererの`available`は宣言された資源の検査結果です。helper・Providerを起動して合成する検査ではなく、Open JTalkによる読み解析などを含む全機能の利用可否は保証しません。利用できないRendererがあっても一覧取得は成功するため、各要素の状態を確認してください。
+
 ## オプション
 
 
 | オプション | 既定値 | 説明 |
 |---|---|---|
 | `--version` | | アプリケーションのバージョンを表示して終了 |
-| `--json` | `false` | 合成結果・診断・エラーをJSONで標準出力へ出す。`--version`にも対応 |
+| `--json` | `false` | 結果・診断・エラーをJSONで標準出力へ出す。`--list`・`--version`にも対応 |
+| `--list <kind>` | | `voicebanks`・`models`・`renderers`・`resamplers`・`wavtools`の一覧。`--json`対応 |
 | `--voicebank <dir>` | | ボイスバンクのディレクトリ（必須） |
 | `--text <文>` | | 合成する文章 |
 | `--text-file <path>` | | UTF-8の文章ファイル。`-`で標準入力 |
