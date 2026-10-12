@@ -12,11 +12,11 @@ import (
 )
 
 func runFrontend(ctx context.Context, text string, cfg Config) (*Analysis, error) {
-	helper, err := resolveHelper(cfg.HelperPath)
+	helper, err := ResolveHelperPath(cfg.HelperPath)
 	if err != nil {
 		return nil, err
 	}
-	dictionary, err := resolveDictionary(cfg.DictionaryPath)
+	dictionary, err := ResolveDictionaryPath(cfg.DictionaryPath)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,8 @@ func runFrontend(ctx context.Context, text string, cfg Config) (*Analysis, error
 	return &result, nil
 }
 
-func resolveHelper(explicit string) (string, error) {
+// ResolveHelperPath resolves the same file used by Analyze without starting it.
+func ResolveHelperPath(explicit string) (string, error) {
 	name := "utautts-openjtalk-features"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
@@ -42,7 +43,8 @@ func resolveHelper(explicit string) (string, error) {
 	})
 }
 
-func resolveDictionary(explicit string) (string, error) {
+// ResolveDictionaryPath checks directory placement, not dictionary contents.
+func ResolveDictionaryPath(explicit string) (string, error) {
 	const name = "open_jtalk_dic_utf_8-1.11"
 	if explicit != "" {
 		if info, err := os.Stat(explicit); err == nil && info.IsDir() {

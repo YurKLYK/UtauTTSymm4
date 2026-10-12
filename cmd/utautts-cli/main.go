@@ -103,10 +103,12 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		showVersion              bool
 		jsonOutput               bool
 		listKind                 string
+		doctor                   bool
 	)
 	flag.BoolVar(&showVersion, "version", false, "print application version")
-	flag.BoolVar(&jsonOutput, "json", false, "print result, catalog, version or error JSON to standard output")
+	flag.BoolVar(&jsonOutput, "json", false, "print result, catalog, doctor, version or error JSON to standard output")
 	flag.StringVar(&listKind, "list", "", "list voicebanks, models, renderers, resamplers or wavtools without synthesizing")
+	flag.BoolVar(&doctor, "doctor", false, "inspect selected resources without starting helpers or synthesizing")
 	flag.StringVar(&voicebankPath, "voicebank", "", "path to a UTAU voicebank directory")
 	flag.StringVar(&reading, "kana", "", "kana reading to synthesize")
 	flag.StringVar(&reading, "reading", "", "pronunciation to synthesize (kana, ARPAbet, or Pinyin)")
@@ -181,7 +183,7 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		defer func() {
 			report.OK = runErr == nil
 			if runErr != nil {
-				report = cliResponse{Error: &cliErrorReport{Code: cliErrorCode(runErr), Message: runErr.Error()}}
+				report = cliResponse{Doctor: report.Doctor, Error: &cliErrorReport{Code: cliErrorCode(runErr), Message: runErr.Error()}}
 			}
 			if err := json.NewEncoder(stdout).Encode(report); err != nil {
 				runErr = errors.Join(runErr, cliFailure("output_error", fmt.Errorf("write result JSON: %w", err)))
@@ -200,6 +202,26 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
 		OpenJTalkPath: openJTalkPath, OpenJTalkDictionary: openJTalkDictionaryPath,
 		RendererDirectories: rendererDirectories, ModelDirectories: modelDirectories,
+	}
+	if doctor {
+		var conflict string
+		flag.Visit(func(option *flagpkg.Flag) {
+			if !doctorFlags[option.Name] && conflict == "" {
+				conflict = option.Name
+			}
+		})
+		if conflict != "" {
+			return cliFailure("invalid_arguments", fmt.Errorf("--doctor cannot be combined with --%s", conflict))
+		}
+		diagnosis, err := inspectEnvironment(voicebankPath, prosodyPath, resampler, wavtool, runtimeConfig)
+		if jsonOutput {
+			report.Doctor = diagnosis
+			return err
+		}
+		if diagnosis != nil {
+			err = errors.Join(err, cliFailure("output_error", writeDoctor(stdout, diagnosis)))
+		}
+		return err
 	}
 	if listKind != "" {
 		var conflict string

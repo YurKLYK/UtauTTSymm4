@@ -116,14 +116,32 @@ utautts-cli --list wavtools
 
 Rendererの`available`は宣言された資源の検査結果です。helper・Providerを起動して合成する検査ではなく、Open JTalkによる読み解析などを含む全機能の利用可否は保証しません。利用できないRendererがあっても一覧取得は成功するため、各要素の状態を確認してください。
 
+## 環境診断
+
+`--doctor`は合成せず、選択した資源の配置を検査します。`--out`や発話入力とは併用できません。
+
+```sh
+utautts-cli --doctor --voicebank "voice/足立レイver3.5.0" --prosody frame-intonation-tcn-v12
+utautts-cli --doctor --renderer utautts-world-phrase --json
+```
+
+検査対象は選択Rendererの必要資源、Classicツール、モデルID、明示した音源、Open JTalkのhelperファイルと辞書ディレクトリです。探索先や資源パスは合成時と同じフラグで指定できます。カタログの読込警告も返します。
+
+各検査の`status`は`ok`・`warning`・`error`です。未指定の音源と、自動探索で見つからないOpen JTalk資源は警告にします。選択Renderer・モデルや明示した資源に不足があれば終了コード1、警告だけなら0を返します。
+
+`--json`では`doctor.version`・`os`・`arch`と`checks`を返します。各検査は`id`・`status`・`message`、該当する場合は`path`を持ちます。検査エラー時も`doctor`を残し、`ok: false`と`error`を返します。Runtimeの初期化に失敗した場合は検査結果を返せません。
+
+これは静的な配置検査です。音源の波形、辞書の内容、helperの実行権限・起動、Providerの通信、合成結果は検証しません。`ok: true`は全機能の動作保証ではありません。
+
 ## オプション
 
 
 | オプション | 既定値 | 説明 |
 |---|---|---|
 | `--version` | | アプリケーションのバージョンを表示して終了 |
-| `--json` | `false` | 結果・診断・エラーをJSONで標準出力へ出す。`--list`・`--version`にも対応 |
+| `--json` | `false` | 結果・診断・エラーをJSONで標準出力へ出す。`--list`・`--doctor`・`--version`にも対応 |
 | `--list <kind>` | | `voicebanks`・`models`・`renderers`・`resamplers`・`wavtools`の一覧。`--json`対応 |
+| `--doctor` | `false` | 選択した資源の配置を静的に検査。`--json`対応 |
 | `--voicebank <dir>` | | ボイスバンクのディレクトリ（必須） |
 | `--text <文>` | | 合成する文章 |
 | `--text-file <path>` | | UTF-8の文章ファイル。`-`で標準入力 |

@@ -13,6 +13,7 @@ type cliResponse struct {
 	Result  *cliSynthesisReport `json:"result,omitempty"`
 	Version *cliVersionReport   `json:"version,omitempty"`
 	Catalog *cliCatalogReport   `json:"catalog,omitempty"`
+	Doctor  *cliDoctorReport    `json:"doctor,omitempty"`
 	Error   *cliErrorReport     `json:"error,omitempty"`
 }
 
