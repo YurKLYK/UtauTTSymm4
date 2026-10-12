@@ -46,6 +46,7 @@ xattr -rc "utautts-server" runtime
 |---|---|---|
 | `GET` | `/api/health` | 稼働確認 |
 | `GET` | `/api/readiness` | 既定Rendererの資源と音源登録状況の静的検査 |
+| `GET` | `/api/limits` | 適用中の運用制限 |
 | `GET` | `/api/voicebanks` | 音源一覧 |
 | `POST` | `/api/voicebanks` | 音源の登録（既定で無効） |
 | `POST` | `/api/voicebanks/reload` | 音源ディレクトリの再読込 |
@@ -60,13 +61,15 @@ xattr -rc "utautts-server" runtime
 ## 共通仕様
 
 - 各API処理のエラーは`{"error":"説明","code":"分類"}`のJSONと対応するHTTPステータスで返ります。既存の`error`は文字列のままです。未定義パス・未対応メソッドの404・405はHTTPルーターの応答です。
-- JSON本文は1 MiBまでです。未知のJSON fieldは入力ミスとして拒否されます（400）。
+- JSON本文は既定で1 MiBまでです。未知のJSON fieldは入力ミスとして拒否されます（400）。
 - ボディは単一のJSONオブジェクトでなければなりません。
-- 1発話の `text` と有効な読み（`reading`、無ければ`kana`）はそれぞれ500文字までです（413）。
-- `manual_pitch` のpointsは最大1000個です（413）。
-- `mora_durations_ms` と `resampler_expressions` は最大500要素です（413）。
-- batchは16発話、展開前WAV合計256 MiBまでです（413）。
-- 合成は最大4並行に制限されます。batchの同時実行はさらに最大2並行で、超過分は空きを待って順に処理されます。
+- 1発話の`text`と有効な読み（`reading`、無ければ`kana`）は既定でそれぞれ500文字までです（413）。
+- `manual_pitch`のpointsは既定で最大1000個です（413）。
+- `mora_durations_ms`と`resampler_expressions`は既定で最大500要素です（413）。
+- batchは既定で16発話、非圧縮WAV合計256 MiBまでです（413）。
+- 合成・読み解析は既定で合計4並行、batchはさらに最大2並行です。超過分は空きを待ちます。待機順の保証はありません。
+
+これらの上限は[起動オプション](#起動オプション)で変更でき、適用中の値は`/api/limits`で取得できます。
 
 ### 認証
 
@@ -83,6 +86,7 @@ GET・HEAD以外のリクエストの`Origin`検査は`--auth-token`を設定し
 | `unavailable` | 音源・モデル・Renderer等の不足（従来どおり400）、終了済みRuntime（503） |
 | `synthesis_error` | 読み解析・合成の失敗（422） |
 | `canceled`・`deadline_exceeded` | 要求のキャンセル・期限切れ（408） |
+| `queue_timeout` | 処理枠の待機時間超過（503） |
 | `unauthorized`・`forbidden` | 認証・Origin・登録許可のエラー（401・403） |
 | `internal_error` | 再読込・一時ファイル・ZIP出力などの内部エラー（500） |
 
@@ -112,6 +116,28 @@ GET・HEAD以外のリクエストの`Origin`検査は`--auth-token`を設定し
 ```
 
 不足時は`status: "not_ready"`となり、Rendererの不足理由は`renderer.issues`へ入ります。helperやProviderは起動せず、Open JTalk・辞書・モデル・音源波形や実際の合成は検証しません。特定の発話が合成できることを保証する応答ではありません。
+
+### `GET /api/limits`
+
+適用中の制限を返します。バイト数・件数・並列数は整数、時間は`30s`などの文字列です。
+
+```json
+{
+  "max_json_request_bytes": 1048576,
+  "max_text_runes": 500,
+  "max_batch_items": 16,
+  "max_batch_wav_bytes": 268435456,
+  "max_manual_pitch_points": 1000,
+  "max_concurrent_synthesis": 4,
+  "max_concurrent_batches": 2,
+  "queue_timeout": "0s",
+  "synthesis_timeout": "0s"
+}
+```
+
+`queue_timeout`は処理枠ごとの最大待機時間です。`synthesis_timeout`は要求のJSON読込後の解析・合成に適用し、処理枠の待機時間も含みます。一括合成では全発話を通して一つの期限を使い、発話ごとにはリセットしません。時間の`0s`は制限なしです。
+
+期限切れ後も要求と資源の終了を待ちます。本文読込や同期I/O、Runtime再読込の待機、応答書込を強制的に打ち切る設定ではありません。ネットワーク側には既存のread timeout 30秒・write timeout 10分が別途適用されます。並列数やWAV合計の制限はプロセスのメモリ使用量の上限を保証しません。
 
 ### `GET /api/voicebanks`
 
@@ -406,3 +432,19 @@ ID順にソートされた音源一覧です。
 - `--allow-voicebank-registration`: `POST /api/voicebanks` による音源パス登録を許可する（登録先は`--voice-dir`以下に制限）
 - `--worldline-bridge`: worldline bridge実行ファイルを明示する
 - `--openjtalk-features` / `--openjtalk-dictionary`: 自動検出を使わずhelperまたは辞書を明示する開発用オプション
+
+### 運用制限
+
+| オプション | 既定値 | 対象 |
+| --- | --- | --- |
+| `--max-json-bytes` | `1048576` | JSON本文のバイト数 |
+| `--max-text-runes` | `500` | 文章・有効な読みの文字数、モーラ長・resampler編集の要素数 |
+| `--max-batch-items` | `16` | 一括合成の発話数 |
+| `--max-batch-wav-bytes` | `268435456` | 一括合成の非圧縮WAV合計バイト数 |
+| `--max-manual-pitch-points` | `1000` | 手動ピッチのpoints数 |
+| `--max-concurrent-synthesis` | `4` | 合成・解析の合計並列数 |
+| `--max-concurrent-batches` | `2` | 一括合成の並列数 |
+| `--queue-timeout` | `0` | 処理枠ごとの待機時間。例: `30s` |
+| `--synthesis-timeout` | `0` | 解析・合成要求全体の期限。待機を含む。例: `2m` |
+
+サイズ・件数・並列数の`0`は既定値を使い、時間の`0`は無制限です。負の値は起動時に拒否します。

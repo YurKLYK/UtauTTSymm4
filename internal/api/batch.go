@@ -25,7 +25,7 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 			Request SynthesisRequest `json:"request"`
 		} `json:"items"`
 	}
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
@@ -33,8 +33,9 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusBadRequest, errors.New("items are required"))
 		return
 	}
-	if len(request.Items) > maxBatchItems {
-		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("batch supports at most %d items", maxBatchItems))
+	limits := s.effectiveLimits()
+	if len(request.Items) > limits.MaxBatchItems {
+		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("batch supports at most %d items", limits.MaxBatchItems))
 		return
 	}
 	if request.WriteText {
@@ -60,15 +61,14 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		seenNames[name] = struct{}{}
 		names[index] = name
 	}
-	if s.batchSem != nil {
-		select {
-		case s.batchSem <- struct{}{}:
-			defer func() { <-s.batchSem }()
-		case <-r.Context().Done():
-			writeAPIError(w, http.StatusRequestTimeout, r.Context().Err())
-			return
-		}
+	ctx, cancel := s.processingContext(r.Context())
+	defer cancel()
+	release, err := s.acquire(ctx, s.batchSem)
+	if err != nil {
+		writeAPIError(w, http.StatusRequestTimeout, err)
+		return
 	}
+	defer release()
 	output, err := os.CreateTemp("", "utautts-batch-*.zip")
 	if err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err)
@@ -80,9 +80,9 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		_ = os.Remove(outputPath)
 	}()
 	archive := zip.NewWriter(output)
-	totalWAVBytes := 0
+	var totalWAVBytes int64
 	for index, item := range request.Items {
-		result, status, err := s.synthesize(r.Context(), item.Request)
+		result, status, err := s.synthesize(ctx, item.Request)
 		if err != nil {
 			_ = archive.Close()
 			writeAPIError(w, status, fmt.Errorf("item %d: %w", index+1, err))
@@ -90,10 +90,10 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		}
 		name := names[index]
 		wav := audio.PCMToWavBytes(result.Audio)
-		totalWAVBytes += len(wav)
-		if totalWAVBytes > maxBatchWAVBytes {
+		totalWAVBytes += int64(len(wav))
+		if totalWAVBytes > limits.MaxBatchWAVBytes {
 			_ = archive.Close()
-			writeAPIError(w, http.StatusRequestEntityTooLarge, errors.New("batch audio exceeds 256 MiB"))
+			writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("batch audio exceeds %d bytes", limits.MaxBatchWAVBytes))
 			return
 		}
 		entry, err := archive.Create(name)
@@ -157,6 +157,10 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := output.Seek(0, io.SeekStart); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if err := ctx.Err(); err != nil {
+		writeAPIError(w, http.StatusRequestTimeout, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/zip")

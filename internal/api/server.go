@@ -55,6 +55,7 @@ type Config struct {
 	OpenJTalkPath, OpenJTalkDictionary, AuthToken string
 	AllowVoicebankRegistration                    bool
 	RendererDirectories, ModelDirectories         []string
+	Limits                                        Limits
 }
 
 type Voicebank struct {
@@ -90,6 +91,7 @@ type Server struct {
 	service             *synth.Service
 	voiceLibrary        *voicebank.Library
 	runtime             *synth.Runtime
+	limits              Limits
 }
 
 type apiVoicebankResolver struct {
@@ -106,11 +108,16 @@ func (r apiVoicebankResolver) Resolve(id string) (string, bool) {
 }
 
 func New(config Config) (*Server, error) {
+	limits, err := config.Limits.normalized()
+	if err != nil {
+		return nil, fmt.Errorf("server limits: %w", err)
+	}
 	voiceDir := voicebank.ResolveDirectory(config.VoiceDir)
 	srv := &Server{
 		voicebanks:          map[string]Voicebank{},
-		synthesisSem:        make(chan struct{}, maxConcurrentSynthesis),
-		batchSem:            make(chan struct{}, maxConcurrentBatches),
+		synthesisSem:        make(chan struct{}, limits.MaxConcurrentSynthesis),
+		batchSem:            make(chan struct{}, limits.MaxConcurrentBatches),
+		limits:              limits,
 		worldlineBridgePath: config.WorldlineBridgePath, voiceDir: voiceDir,
 		openJTalkPath: config.OpenJTalkPath, openJTalkDictionary: config.OpenJTalkDictionary,
 		authToken: config.AuthToken, allowRegistration: config.AllowVoicebankRegistration,
@@ -148,6 +155,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 	mux.HandleFunc("GET /api/readiness", s.handleReadiness)
+	mux.HandleFunc("GET /api/limits", s.handleLimits)
 	mux.HandleFunc("GET /api/voicebanks", s.handleListVoicebanks)
 	mux.HandleFunc("POST /api/voicebanks", s.handleRegisterVoicebank)
 	mux.HandleFunc("POST /api/voicebanks/reload", s.handleReloadVoicebanks)
@@ -299,7 +307,7 @@ func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		Text       string                    `json:"text"`
 		Dictionary []utautts.DictionaryEntry `json:"dictionary"`
 	}
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
@@ -307,13 +315,24 @@ func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		writeAPIError(w, http.StatusBadRequest, errors.New("text is required"))
 		return
 	}
-	if len([]rune(request.Text)) > maxTextRunes {
-		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("text is limited to %d characters", maxTextRunes))
+	if len([]rune(request.Text)) > s.effectiveLimits().MaxTextRunes {
+		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("text is limited to %d characters", s.effectiveLimits().MaxTextRunes))
 		return
 	}
-	preview, err := s.synthesisService().AnalyzeContext(r.Context(), entryinput.Apply(utautts.Request{
+	ctx, cancel := s.processingContext(r.Context())
+	defer cancel()
+	release, err := s.acquire(ctx, s.synthesisSem)
+	if err != nil {
+		writeAPIError(w, http.StatusRequestTimeout, err)
+		return
+	}
+	defer release()
+	preview, err := s.synthesisService().AnalyzeContext(ctx, entryinput.Apply(utautts.Request{
 		Text: request.Text, Dictionary: request.Dictionary,
 	}, synth.DefaultRequest()))
+	if err == nil {
+		err = ctx.Err()
+	}
 	if err != nil {
 		writeAPIError(w, contextErrorStatus(err, http.StatusUnprocessableEntity), err)
 		return
@@ -357,7 +376,7 @@ func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request)
 		Name string `json:"name"`
 		Path string `json:"path"`
 	}
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
@@ -427,11 +446,13 @@ func pathWithin(root, candidate string) (string, error) {
 
 func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
-	result, status, err := s.synthesize(r.Context(), request)
+	ctx, cancel := s.processingContext(r.Context())
+	defer cancel()
+	result, status, err := s.synthesize(ctx, request)
 	if err != nil {
 		writeAPIError(w, status, err)
 		return
@@ -448,11 +469,13 @@ func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSynthesizeLabel(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
-	result, status, err := s.synthesize(r.Context(), request)
+	ctx, cancel := s.processingContext(r.Context())
+	defer cancel()
+	result, status, err := s.synthesize(ctx, request)
 	if err != nil {
 		writeAPIError(w, status, err)
 		return
@@ -468,24 +491,22 @@ func (s *Server) handleSynthesizeLabel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) synthesize(ctx context.Context, request SynthesisRequest) (*synth.Result, int, error) {
-	if s.synthesisSem != nil {
-		select {
-		case s.synthesisSem <- struct{}{}:
-		case <-ctx.Done():
-			return nil, http.StatusRequestTimeout, ctx.Err()
-		}
-		defer func() { <-s.synthesisSem }()
+	release, err := s.acquire(ctx, s.synthesisSem)
+	if err != nil {
+		return nil, http.StatusRequestTimeout, err
 	}
+	defer release()
+	limits := s.effectiveLimits()
 	if synthesisReading(request) == "" && request.Text == "" {
 		return nil, http.StatusBadRequest, fmt.Errorf("text or reading is required")
 	}
-	if len([]rune(request.Text)) > maxTextRunes || len([]rune(synthesisReading(request))) > maxTextRunes {
-		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("text and reading are limited to %d characters", maxTextRunes)
+	if len([]rune(request.Text)) > limits.MaxTextRunes || len([]rune(synthesisReading(request))) > limits.MaxTextRunes {
+		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("text and reading are limited to %d characters", limits.MaxTextRunes)
 	}
 	if request.MoraDurationMS < 0 || request.MoraDurationMS > 1000 || request.PauseDurationMS < 0 || request.PauseDurationMS > 3000 || request.LeadingPreutteranceMS < 0 || request.LeadingPreutteranceMS > 1000 {
 		return nil, http.StatusBadRequest, fmt.Errorf("duration settings are outside the supported range")
 	}
-	if len(request.MoraDurationsMS) > maxTextRunes {
+	if len(request.MoraDurationsMS) > limits.MaxTextRunes {
 		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("mora duration settings contain too many values")
 	}
 	for _, duration := range request.MoraDurationsMS {
@@ -496,13 +517,16 @@ func (s *Server) synthesize(ctx context.Context, request SynthesisRequest) (*syn
 	if request.IntonationStrength < 0 || request.IntonationStrength > tts.MaxIntonationStrength {
 		return nil, http.StatusBadRequest, fmt.Errorf("intonation_strength must be between 0 and %.0f", tts.MaxIntonationStrength)
 	}
-	if request.ManualPitch != nil && len(request.ManualPitch.Points) > maxManualPitchPoints {
-		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("manual pitch supports at most %d points", maxManualPitchPoints)
+	if request.ManualPitch != nil && len(request.ManualPitch.Points) > limits.MaxManualPitchPoints {
+		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("manual pitch supports at most %d points", limits.MaxManualPitchPoints)
 	}
-	if len(request.ResamplerExpressions) > maxTextRunes {
+	if len(request.ResamplerExpressions) > limits.MaxTextRunes {
 		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("resampler_expressions contains too many values")
 	}
 	result, err := s.synthesisService().SynthesizeContext(ctx, request.InternalRequest())
+	if err == nil {
+		err = ctx.Err()
+	}
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil, http.StatusRequestTimeout, err

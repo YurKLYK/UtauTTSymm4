@@ -17,11 +17,13 @@ type synthesisResponse struct {
 
 func (s *Server) handleSynthesizeResult(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
-	if err := decodeJSONBody(w, r, &request); err != nil {
+	if err := s.decodeJSONBody(w, r, &request); err != nil {
 		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
-	result, status, err := s.synthesize(r.Context(), request)
+	ctx, cancel := s.processingContext(r.Context())
+	defer cancel()
+	result, status, err := s.synthesize(ctx, request)
 	if err != nil {
 		writeAPIError(w, status, err)
 		return
