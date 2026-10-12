@@ -1,77 +1,51 @@
-# UtauTTS
+# UtauTTS for YMM4
 
-UTAUボイスバンクの原音接続に、学習ベースのイントネーション調整を加えたTTS
+UTAU音源を、ゆっくりMovieMaker4（YMM4）のキャラクターボイスとして利用するための音声合成プラグインです。
 
-**まだベータ版みたいなもんなのでゴリゴリ仕様が変わります。**
+[UtauTTS](https://github.com/yh2237/UtauTTS)の学習済みイントネーションとWORLDフレーズ合成を使用します。UtauTTSのGUIを常駐させず、セリフ生成時だけ同梱CLIを起動します。
 
-あとスター付けてくれるとめっちゃ喜びます
+## 対応環境
 
-> ボイスバンクを使う前に、各音源の利用規約を確認してください。UtauTTSはボイスバンクの利用で生じた問題について責任を負いません。
+- Windows 10 / 11 x64
+- ゆっくりMovieMaker4 v4.56.1.0以降
+- UTAU単独音音源
+
+UTAU音源は同梱していません。各音源の利用規約を確認して使用してください。
 
 ## インストール
 
-[GitHub Releases](https://github.com/yh2237/UtauTTS/releases)から環境と用途に合うZIPをダウンロードします。
+1. [Releases](https://github.com/YurKLYK/UtauTTSymm4/releases)から最新の`UTAUTalkVoice-*.ymme`をダウンロードします。
+2. YMM4を終了します。
+3. `.ymme`をダブルクリックしてインストールします。
+4. YMM4のキャラクター設定で、声質を`UTAU Talk / UTAU単独音`にします。
+5. `UTAU音源`へ`character.txt`と`oto.ini`がある音源フォルダを指定します。
 
-| パッケージ | 用途 |
-| --- | --- |
-| `UtauTTS-win-x64.zip` | Windows x64向けGUIとCLI |
-| `UtauTTS-linux-x64.zip` | Linux x64向けGUIとCLI |
-| `UtauTTS-mac-arm64.zip` | Apple Silicon Mac向けGUIとCLI |
-| `UtauTTS-Server-win-x64.zip` | Windows x64向けHTTP Server |
-| `UtauTTS-Server-linux-x64.zip` | Linux x64向けHTTP Server |
-| `UtauTTS-Server-mac-arm64.zip` | Apple Silicon Mac向けHTTP Server |
+レンダラーの選択は不要です。プラグインに同梱したUtauTTS v1.5.1を常に使用します。
 
-Windows版はZIPを展開して`utautts.exe`を実行します。Linux版とmacOS版の準備は[インストール](docs/installation.md)を参照してください。
+## 設定
 
-GUI版には「足立レイ ver3.5.0」を同梱しています。利用条件は[同梱音源](docs/voicebank.md)と音源内の文書を確認してください。
+- 基本音程: 60でC4
+- 話速: 1.0が標準（標準モーラ長130ms）
+- 抑揚: UtauTTSの学習済みピッチ変化の強さ
+- アクセント: 抑揚への倍率
+- 音量: YMM4標準の音量設定を使用
 
-## 使い方
+設定はYMM4のキャラクターごとに保存されるため、キャラクターごとに異なるUTAU音源を利用できます。
 
-1. 文章欄へ読み上げる文を入力する
-2. 下部の「基本編集」でイントネーションと発音の長さを確認し、必要なら点や境界線を動かす
-3. `Ctrl+Enter`または再生ボタンで音声を確認する
-4. 「ファイル」→「書き出し」→「WAVを保存...」で保存する
+## ビルド
 
-音源は実行ファイルと同じ階層の`voice`へフォルダごと置き、「ファイル」→「音源とプラグイン」→「音源を再読込」で読み込みます。音源の配置、カードごとの設定、編集の操作は[GUIの使い方](docs/gui.md)にあります。
-
-既定の抑揚モデルは`frame-intonation-tcn-v12`、Rendererは`utautts-world-phrase`です。英語・中国語のカードでは各言語のモデルへ自動で切り替わります。同梱モデルと学習元は[抑揚モデルのライセンス](models/README.md)にあります。
-
-## CLIとHTTP Server
-
-CLIはGUI版の`tools/utautts-cli.exe`（Linux／macOSは`tools/utautts-cli`）です。
+.NET 10 SDK、YMM4本体、公式UtauTTS v1.5.1 Windows x64配布物が必要です。
 
 ```powershell
-.\UtauTTS\tools\utautts-cli.exe `
-  --voicebank ".\UtauTTS\voice\足立レイver3.5.0" `
-  --text "こんにちは、今日はいい天気です。" `
-  --prosody frame-intonation-tcn-v12 `
-  --out ".\out.wav"
+.\packaging\build-release.ps1 `
+  -Ymm4Directory 'C:\YukkuriMovieMaker_v4' `
+  -UtauTtsReleaseDirectory 'C:\path\to\UtauTTS-win-x64-v1.5.1'
 ```
 
-Server版を起動すると`http://127.0.0.1:8080/`でコンソールUIを使えます。
-
-```powershell
-.\UtauTTS-Server\utautts-server.exe --voice-dir ".\UtauTTS-Server\voice"
-```
-
-全オプションは[コマンドライン](docs/cli.md)、APIは[UtauTTS Server](docs/server.md)を参照してください。
-
-## うまく動かないとき
-
-[トラブルシューティング](docs/troubleshooting.md)をご覧ください。
-
-解決しない場合はIssueを送るか[@2237yh](https://x.com/2237yh)に直接DMを送ってください。
-
-## ドキュメント
-
-利用方法、仕組み、開発者向けの資料は[ドキュメント一覧](docs/README.md)にまとめています。
-
-## 謝辞
-
-- [アアアアアアア（@a7_riri）](https://x.com/a7_riri)
-- [siyukatu（@siyukat）](https://x.com/siyukat)
-- [WhosThat（@WndertheTree）](https://x.com/WndertheTree)
+`dist/UTAUTalkVoice-0.1.5.ymme`が生成されます。ビルドスクリプトはUtauTTS配布物から、日本語合成に必要なCLI・Open JTalk・v12モデル・WORLDランタイム・ライセンス文書だけを収録します。UTAU音源やUtauTTS GUIは収録しません。
 
 ## ライセンス
 
-UtauTTSのソースコードは[MIT License](./LICENSE)です。同梱モデル、ボイスバンク、文章データ、OpenUtau/WORLD由来ファイル、Qtなどの第三者コンポーネントには個別の利用条件があります。詳細は[ライセンスの適用範囲](./LICENSE-SCOPE.md)、[第三者通知](./THIRD_PARTY_NOTICES.txt)、`THIRD_PARTY_NOTICES-*`、`licenses/`、各同梱文書を確認してください。
+このプラグインのソースコードはMIT Licenseです。
+
+配布パッケージにはUtauTTS v1.5.1の一部と、その第三者コンポーネントを同梱します。適用範囲や各ライセンスは[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)および`.ymme`内の`utautts.zip`に保存された原文を確認してください。
