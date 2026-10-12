@@ -2,6 +2,7 @@ package api
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -25,20 +26,20 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		} `json:"items"`
 	}
 	if err := decodeJSONBody(w, r, &request); err != nil {
-		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
+		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
 	if len(request.Items) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "items are required"})
+		writeAPIError(w, http.StatusBadRequest, errors.New("items are required"))
 		return
 	}
 	if len(request.Items) > maxBatchItems {
-		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": fmt.Sprintf("batch supports at most %d items", maxBatchItems)})
+		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("batch supports at most %d items", maxBatchItems))
 		return
 	}
 	if request.WriteText {
 		if _, err := sidecar.TextBytes("", request.TextEncoding); err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+			writeAPIError(w, http.StatusBadRequest, err)
 			return
 		}
 	}
@@ -53,7 +54,7 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 			name += ".wav"
 		}
 		if _, exists := seenNames[name]; exists {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("duplicate batch filename %q", name)})
+			writeAPIError(w, http.StatusBadRequest, fmt.Errorf("duplicate batch filename %q", name))
 			return
 		}
 		seenNames[name] = struct{}{}
@@ -64,13 +65,13 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		case s.batchSem <- struct{}{}:
 			defer func() { <-s.batchSem }()
 		case <-r.Context().Done():
-			writeJSON(w, http.StatusRequestTimeout, map[string]string{"error": r.Context().Err().Error()})
+			writeAPIError(w, http.StatusRequestTimeout, r.Context().Err())
 			return
 		}
 	}
 	output, err := os.CreateTemp("", "utautts-batch-*.zip")
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusInternalServerError, err)
 		return
 	}
 	outputPath := output.Name()
@@ -84,7 +85,7 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		result, status, err := s.synthesize(r.Context(), item.Request)
 		if err != nil {
 			_ = archive.Close()
-			writeJSON(w, status, map[string]string{"error": fmt.Sprintf("item %d: %v", index+1, err)})
+			writeAPIError(w, status, fmt.Errorf("item %d: %w", index+1, err))
 			return
 		}
 		name := names[index]
@@ -92,18 +93,18 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 		totalWAVBytes += len(wav)
 		if totalWAVBytes > maxBatchWAVBytes {
 			_ = archive.Close()
-			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "batch audio exceeds 256 MiB"})
+			writeAPIError(w, http.StatusRequestEntityTooLarge, errors.New("batch audio exceeds 256 MiB"))
 			return
 		}
 		entry, err := archive.Create(name)
 		if err != nil {
 			_ = archive.Close()
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			writeAPIError(w, http.StatusInternalServerError, err)
 			return
 		}
 		if _, err := entry.Write(wav); err != nil {
 			_ = archive.Close()
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			writeAPIError(w, http.StatusInternalServerError, err)
 			return
 		}
 		base := strings.TrimSuffix(name, filepath.Ext(name))
@@ -115,18 +116,18 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 			data, err := sidecar.TextBytes(text, request.TextEncoding)
 			if err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusBadRequest, err)
 				return
 			}
 			entry, err := archive.Create(base + ".txt")
 			if err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusInternalServerError, err)
 				return
 			}
 			if _, err := entry.Write(data); err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
@@ -134,28 +135,28 @@ func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {
 			data, err := sidecar.LabBytes(result.Lab)
 			if err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusUnprocessableEntity, err)
 				return
 			}
 			entry, err := archive.Create(base + ".lab")
 			if err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusInternalServerError, err)
 				return
 			}
 			if _, err := entry.Write(data); err != nil {
 				_ = archive.Close()
-				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				writeAPIError(w, http.StatusInternalServerError, err)
 				return
 			}
 		}
 	}
 	if err := archive.Close(); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusInternalServerError, err)
 		return
 	}
 	if _, err := output.Seek(0, io.SeekStart); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusInternalServerError, err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/zip")

@@ -169,7 +169,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 		}
 		if s.authToken != "" && r.Method != http.MethodGet && r.Method != http.MethodHead {
 			if origin := r.Header.Get("Origin"); origin != "" && origin != "http://"+r.Host && origin != "https://"+r.Host {
-				http.Error(w, "cross-origin request rejected", http.StatusForbidden)
+				writeAPIError(w, http.StatusForbidden, errors.New("cross-origin request rejected"))
 				return
 			}
 		}
@@ -180,7 +180,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 		const prefix = "Bearer "
 		authorization := r.Header.Get("Authorization")
 		if len(authorization) <= len(prefix) || authorization[:len(prefix)] != prefix || !tokenEqual(authorization[len(prefix):], s.authToken) {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			writeAPIError(w, http.StatusUnauthorized, errors.New("unauthorized"))
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -296,22 +296,22 @@ func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		Dictionary []utautts.DictionaryEntry `json:"dictionary"`
 	}
 	if err := decodeJSONBody(w, r, &request); err != nil {
-		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
+		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
 	if request.Text == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "text is required"})
+		writeAPIError(w, http.StatusBadRequest, errors.New("text is required"))
 		return
 	}
 	if len([]rune(request.Text)) > maxTextRunes {
-		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": fmt.Sprintf("text is limited to %d characters", maxTextRunes)})
+		writeAPIError(w, http.StatusRequestEntityTooLarge, fmt.Errorf("text is limited to %d characters", maxTextRunes))
 		return
 	}
 	preview, err := s.synthesisService().AnalyzeContext(r.Context(), entryinput.Apply(utautts.Request{
 		Text: request.Text, Dictionary: request.Dictionary,
 	}, synth.DefaultRequest()))
 	if err != nil {
-		writeJSON(w, contextErrorStatus(err, http.StatusUnprocessableEntity), map[string]string{"error": err.Error()})
+		writeAPIError(w, contextErrorStatus(err, http.StatusUnprocessableEntity), err)
 		return
 	}
 	items := make([]map[string]any, 0, len(preview.Morae))
@@ -338,7 +338,7 @@ func (s *Server) voicebankList() []Voicebank {
 
 func (s *Server) handleReloadVoicebanks(w http.ResponseWriter, _ *http.Request) {
 	if err := s.loadVoiceDirectory(); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusInternalServerError, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"voicebanks": s.voicebankList()})
@@ -346,7 +346,7 @@ func (s *Server) handleReloadVoicebanks(w http.ResponseWriter, _ *http.Request) 
 
 func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request) {
 	if !s.allowRegistration {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "voicebank registration is disabled"})
+		writeAPIError(w, http.StatusForbidden, errors.New("voicebank registration is disabled"))
 		return
 	}
 	var request struct {
@@ -354,17 +354,17 @@ func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request)
 		Path string `json:"path"`
 	}
 	if err := decodeJSONBody(w, r, &request); err != nil {
-		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
+		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
 	path, err := pathWithin(s.voiceDir, request.Path)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
 	vb, err := inspectVoicebank(path)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
 	if request.Name != "" {
@@ -372,7 +372,7 @@ func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request)
 	}
 	summary, err := voicebank.InspectSinger(path)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		writeAPIError(w, http.StatusBadRequest, err)
 		return
 	}
 	register := func() error {
@@ -387,7 +387,7 @@ func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request)
 	}
 	if s.runtime != nil {
 		if err := s.runtime.Reload(register); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			writeAPIError(w, http.StatusInternalServerError, err)
 			return
 		}
 	} else {
@@ -424,12 +424,12 @@ func pathWithin(root, candidate string) (string, error) {
 func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
 	if err := decodeJSONBody(w, r, &request); err != nil {
-		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
+		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
 	result, status, err := s.synthesize(r.Context(), request)
 	if err != nil {
-		writeJSON(w, status, map[string]string{"error": err.Error()})
+		writeAPIError(w, status, err)
 		return
 	}
 	w.Header().Set("Content-Type", "audio/wav")
@@ -444,12 +444,12 @@ func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSynthesizeLabel(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
 	if err := decodeJSONBody(w, r, &request); err != nil {
-		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
+		writeAPIError(w, jsonDecodeStatus(err), err)
 		return
 	}
 	result, status, err := s.synthesize(r.Context(), request)
 	if err != nil {
-		writeJSON(w, status, map[string]string{"error": err.Error()})
+		writeAPIError(w, status, err)
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")

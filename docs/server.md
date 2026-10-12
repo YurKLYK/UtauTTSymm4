@@ -57,7 +57,7 @@ xattr -rc "utautts-server" runtime
 
 ## 共通仕様
 
-- エラーは`{"error":"説明"}`のJSONと対応するHTTPステータスコードで返ります。
+- 各API処理のエラーは`{"error":"説明","code":"分類"}`のJSONと対応するHTTPステータスで返ります。既存の`error`は文字列のままです。未定義パス・未対応メソッドの404・405はHTTPルーターの応答です。
 - JSON本文は1 MiBまでです。未知のJSON fieldは入力ミスとして拒否されます（400）。
 - ボディは単一のJSONオブジェクトでなければなりません。
 - 1発話の `text` と有効な読み（`reading`、無ければ`kana`）はそれぞれ500文字までです（413）。
@@ -71,6 +71,20 @@ xattr -rc "utautts-server" runtime
 `--auth-token`を設定すると`/api/*`の全エンドポイントで`Authorization: Bearer <token>`ヘッダーが必要になります。無い場合は401です。コンソールUI（`/`と`/ui`）自体は公開されます。
 
 GET・HEAD以外のリクエストの`Origin`検査は`--auth-token`を設定した場合に有効になります。`Origin`ヘッダーがあり、リクエストの`Host`ヘッダーから見たorigin（`http://<host>` / `https://<host>`）と一致しないときは403で拒否します。
+
+### エラー分類
+
+| `code` | 内容・HTTPステータス |
+| --- | --- |
+| `invalid_request` | JSON・必須項目・範囲・ファイル名などの入力不正（400） |
+| `limit_exceeded` | 本文・文字数・編集要素・一括合成の上限超過（413） |
+| `unavailable` | 音源・モデル・Renderer等の不足（従来どおり400）、終了済みRuntime（503） |
+| `synthesis_error` | 読み解析・合成の失敗（422） |
+| `canceled`・`deadline_exceeded` | 要求のキャンセル・期限切れ（408） |
+| `unauthorized`・`forbidden` | 認証・Origin・登録許可のエラー（401・403） |
+| `internal_error` | 再読込・一時ファイル・ZIP出力などの内部エラー（500） |
+
+一括合成で発話が失敗した場合も同じ分類を使い、`error`には`item N: ...`を残します。応答本文の書込が始まった後の通信エラーはJSONへ切り替えず、ログへ記録します。クライアントが切断した場合はエラーJSONを受け取れないことがあります。
 
 ## 各エンドポイント
 
