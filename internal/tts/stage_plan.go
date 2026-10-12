@@ -35,6 +35,7 @@ func buildSynthesisPlan(cfg Config, profile languageProfile, bank *voicebank.Ban
 	// 短いモーラでは不要な原音解析を避ける。
 	stretchAdapt := stretchAdaptEnabled(cfg) && profile.SupportsStretchAdapt()
 	synthesisPlan, err := plan.Build(bank, reading, morae, selections, plan.Config{
+		PauseDurationSet:     cfg.PauseDurationSet,
 		MoraDurationMS:       cfg.MoraDurationMS,
 		PauseDurationMS:      cfg.PauseDurationMS,
 		PauseContext:         pauseContextEnabled(cfg),

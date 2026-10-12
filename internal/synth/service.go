@@ -62,23 +62,24 @@ func DefaultRequest() Request {
 }
 
 type Request struct {
-	SpeechTiming  bool                  `json:"speech_timing"`
-	Text          string                `json:"text"`
-	Reading       string                `json:"reading"`
-	Kana          string                `json:"kana"`
-	Language      string                `json:"language"`
-	Phonemizer    string                `json:"phonemizer"`
-	VoicebankID   string                `json:"voicebank_id"`
-	VoicebankPath string                `json:"-"`
-	Tone          string                `json:"tone"`
-	Color         string                `json:"color"`
-	ModelID       string                `json:"model_id"`
-	ModelPath     string                `json:"model_path"`
-	Renderer      string                `json:"renderer"`
-	Resampler     string                `json:"resampler"`
-	Wavtool       string                `json:"wavtool"`
-	AliasPolicy   voicebank.AliasPolicy `json:"alias_policy"`
-	Dictionary    []DictionaryEntry     `json:"dictionary"`
+	PauseDurationSet bool                  `json:"-"`
+	SpeechTiming     bool                  `json:"speech_timing"`
+	Text             string                `json:"text"`
+	Reading          string                `json:"reading"`
+	Kana             string                `json:"kana"`
+	Language         string                `json:"language"`
+	Phonemizer       string                `json:"phonemizer"`
+	VoicebankID      string                `json:"voicebank_id"`
+	VoicebankPath    string                `json:"-"`
+	Tone             string                `json:"tone"`
+	Color            string                `json:"color"`
+	ModelID          string                `json:"model_id"`
+	ModelPath        string                `json:"model_path"`
+	Renderer         string                `json:"renderer"`
+	Resampler        string                `json:"resampler"`
+	Wavtool          string                `json:"wavtool"`
+	AliasPolicy      voicebank.AliasPolicy `json:"alias_policy"`
+	Dictionary       []DictionaryEntry     `json:"dictionary"`
 	// 旧クライアントの要求を受け取れるよう残す。値は使わない。
 	WordBoundaryEnvelope    bool   `json:"word_boundary_envelope"`
 	SpeechProsodyExperiment string `json:"prosody_experiment"`
@@ -326,6 +327,7 @@ func (s *Service) config(request Request, requireVoicebank bool) (tts.Config, st
 		reading = request.Kana
 	}
 	cfg := tts.Config{
+		PauseDurationSet:        request.PauseDurationSet,
 		Text:                    request.Text,
 		Reading:                 reading,
 		Language:                request.Language,

@@ -33,6 +33,7 @@ func traceMark(start *time.Time, label string) {
 }
 
 type Config struct {
+	PauseDurationSet bool
 	// nilは無効。
 	ContextDuration *bool
 	// ContextDurationStrengthは文脈連動の強度。0は既定1.0。
@@ -472,7 +473,7 @@ func PredictProsody(cfg Config) (*ProsodyPreview, error) {
 	if cfg.MoraDurationMS <= 0 {
 		cfg.MoraDurationMS = plan.DefaultMoraDurationMS
 	}
-	if cfg.PauseDurationMS <= 0 {
+	if cfg.PauseDurationMS <= 0 && !cfg.PauseDurationSet {
 		cfg.PauseDurationMS = plan.DefaultPauseDurationMS
 	}
 	if cfg.ReleaseMS <= 0 && !cfg.ReleaseSet {

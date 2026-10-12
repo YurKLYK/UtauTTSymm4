@@ -20,9 +20,10 @@ const (
 )
 
 type Config struct {
-	MoraDurationMS  float64
-	PauseDurationMS float64
-	PauseContext    bool
+	PauseDurationSet bool
+	MoraDurationMS   float64
+	PauseDurationMS  float64
+	PauseContext     bool
 	// PauseContextStrengthはポーズ長補正の強度。0は既定1.0、負値は恒等。
 	PauseContextStrength float64
 	MoraDurationsMS      []float64
@@ -273,7 +274,7 @@ func Build(bank *voicebank.Bank, reading string, morae []frontend.Mora, selectio
 	if cfg.MoraDurationMS <= 0 {
 		cfg.MoraDurationMS = DefaultMoraDurationMS
 	}
-	if cfg.PauseDurationMS <= 0 {
+	if cfg.PauseDurationMS <= 0 && !cfg.PauseDurationSet {
 		cfg.PauseDurationMS = DefaultPauseDurationMS
 	}
 	for index, duration := range cfg.MoraDurationsMS {

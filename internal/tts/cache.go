@@ -124,9 +124,9 @@ func hashFloatSlice(values []float64) string {
 
 func prosodyComputationKeyFor(cfg Config) prosodyComputationKey {
 	settings := fmt.Sprintf(
-		"mora=%v pause=%v pitchonly=%v apply=%v strength=%v release=%v cap=%v "+
+		"mora=%v pause=%v/%v pitchonly=%v apply=%v strength=%v release=%v cap=%v "+
 			"cd=%v cds=%v bt=%v bts=%v sa=%v sas=%v pc=%v pcs=%v ewf=%v tone=%v color=%v",
-		cfg.MoraDurationMS, cfg.PauseDurationMS, cfg.ProsodyPitchOnly, cfg.ApplyPitch,
+		cfg.MoraDurationMS, cfg.PauseDurationMS, cfg.PauseDurationSet, cfg.ProsodyPitchOnly, cfg.ApplyPitch,
 		cfg.IntonationStrength, cfg.ReleaseMS, rendererCapabilityKey(cfg.RendererCapabilities),
 		optionalBoolKey(cfg.ContextDuration), cfg.ContextDurationStrength, optionalBoolKey(cfg.BoundaryTone), cfg.BoundaryToneStrength,
 		optionalBoolKey(cfg.StretchAdapt), cfg.StretchAdaptStrength, optionalBoolKey(cfg.PauseContext), cfg.PauseContextStrength,
