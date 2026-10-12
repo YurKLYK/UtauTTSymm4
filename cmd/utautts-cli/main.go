@@ -290,6 +290,8 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	// 配置、詳細編集、評価用入力は通常の発話要求に含めない。
 	synthesisRequest := entryinput.Apply(request, synth.Request{
 		VoicebankPath:           voicebankPath,
+		Resampler:               resampler,
+		Wavtool:                 wavtool,
 		MoraDurationsMS:         moraDurations,
 		LeadingPreutteranceMS:   leadingPreutteranceMS,
 		ManualPitchPath:         manualPitchPath,

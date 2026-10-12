@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -122,5 +123,48 @@ func TestCLIJSONVersionAndParseErrors(t *testing.T) {
 	}
 	if code := executeCLI([]string{"--json", "--version"}, strings.NewReader(""), failingWriter{io.ErrClosedPipe}, io.Discard); code != 1 {
 		t.Fatalf("JSON writer failure exit=%d", code)
+	}
+}
+
+func TestCLIClassicToolSelectionsAreNotIgnored(t *testing.T) {
+	base := synthesisArgs(t)
+	root := base[1]
+	t.Chdir(root)
+	if err := os.WriteFile(filepath.Join(root, "renderer.json"), []byte(`{
+		"manifest_version":2,"kind":"synthesis-engine","id":"cli-test-classic",
+		"display_name":"CLI test Classic","contract":"unit-renderer",
+		"provider":"utau-external-resampler","provider_version":"1"
+	}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "Resamplers"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	// Only discovery is exercised: the missing selected tool must be rejected
+	// before any executable is started.
+	tool := "fixture"
+	if runtime.GOOS == "windows" {
+		tool += ".exe"
+	}
+	if err := os.WriteFile(filepath.Join(root, "Resamplers", tool), []byte("unused"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name string
+		args []string
+	}{
+		{"missing-resampler", []string{"--resampler", "missing-resampler"}},
+		{"missing-wavtool", []string{"--resampler", tool, "--wavtool", "missing-wavtool"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			args := append(base, "--json", "--renderer", "cli-test-classic", "--reading", "あ", "--out", filepath.Join(root, "speech.wav"))
+			var stdout, stderr bytes.Buffer
+			code := executeCLI(append(args, test.args...), strings.NewReader(""), &stdout, &stderr)
+			response := decodeResponse(t, stdout.Bytes())
+			detail, ok := response["error"].(map[string]any)
+			if code != 1 || !ok || detail["code"] != "unavailable" || !strings.Contains(detail["message"].(string), test.name) {
+				t.Fatalf("selected tool was ignored: exit=%d, response=%#v, stderr=%q", code, response, stderr.String())
+			}
+		})
 	}
 }
