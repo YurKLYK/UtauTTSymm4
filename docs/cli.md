@@ -7,8 +7,8 @@
 ## 必須の引数
 
 - `--voicebank <dir>`: UTAUボイスバンクのディレクトリ
-- `--out <path>`: 出力WAVのパス
-- `--text <文>`または`--reading <読み>`: 合成する文章または読み
+- `--out <path>`: 出力WAVのパス。`-`で標準出力へ出す
+- `--text <文>`または`--reading <読み>`: 合成する文章または読み。UTF-8ファイルや標準入力からも読み込める
 
 `--text`は選択した言語と発音形式で読みを生成します。`--reading`は、かな、ARPAbet、Pinyinなどの読みを直接指定します。`--kana`は互換用の別名です。日本語以外を使う場合は`--language`も指定してください。
 
@@ -49,6 +49,20 @@ GUIと同じユーザー辞書は、次のJSONを`--dictionary dictionary.json`�
 
 `--write-text`または`--write-lab`を指定すると、WAVと同じ場所へ同名の`.txt`または`.lab`を保存します。
 
+## ファイル・標準入力から読む
+
+`--text-file <path>`で文章、`--reading-file <path>`で読みをUTF-8ファイルから取り込みます。パスに`-`を指定すると標準入力をEOFまで読みます。
+
+```sh
+utautts-cli --voicebank "voice/足立レイver3.5.0" --text-file message.txt --out speech.wav
+
+printf '%s\n' 'こんにちは。' | utautts-cli --voicebank "voice/足立レイver3.5.0" --text-file - --out speech.wav
+```
+
+先頭のUTF-8 BOMと末尾の改行は除き、途中の改行は保持します。ファイル・標準入力の上限はそれぞれ1 MiBです。空白だけの入力やUTF-8以外の入力はエラーになります。
+
+`--text-file`と`--text`、`--reading-file`と`--reading`／`--kana`は併用できません。文章と読みを両方渡す場合は従来どおり読みを優先します。標準入力を文章と読みの両方へ割り当てることはできません。
+
 ## オプション
 
 
@@ -57,13 +71,15 @@ GUIと同じユーザー辞書は、次のJSONを`--dictionary dictionary.json`�
 | `--version` | | アプリケーションのバージョンを表示して終了 |
 | `--voicebank <dir>` | | ボイスバンクのディレクトリ（必須） |
 | `--text <文>` | | 合成する文章 |
+| `--text-file <path>` | | UTF-8の文章ファイル。`-`で標準入力 |
 | `--reading <読み>` | | かな、ARPAbet、またはPinyinを直接指定 |
+| `--reading-file <path>` | | UTF-8の読みファイル。`-`で標準入力 |
 | `--kana <読み>` | | `--reading`と同じ入力を受け付ける互換用の別名 |
 | `--language <id>` | `ja` | 言語。`ja`、`en`、`zh` |
 | `--phonemizer <id>` | 言語から自動選択 | phonemizer。`ja-kana`、`en-arpasing`、`en-delta`、`en-vccv`、`en-cv`、`zh-cvvc` |
 | `--tone` | `C4` | `prefix.map` 使用時に使う音階 |
 | `--color <name>` | | `character.yaml`で定義された音源タイプ／サブバンク |
-| `--out <path>` | | 出力WAVのパス（必須） |
+| `--out <path>` | | 出力WAVのパス（必須）。`-`で標準出力 |
 | `--plan-out <path>` | | 合成計画JSONを保存するパス |
 | `--ustx-out <path>` | | 合成パラメータをOpenUtauのUSTXプロジェクトへ保存するパス |
 | `--dictionary <path>` | | 表記と読みを定義したユーザー辞書JSON |
@@ -132,7 +148,17 @@ GUIと同じユーザー辞書は、次のJSONを`--dictionary dictionary.json`�
 wrote out.wav (4.81s, 44100 Hz, 34 units)
 ```
 
-合成の失敗や引数エラーは終了コード1を返します。原音の選択と配置は`--plan-out`で確認できます。
+`--out -`はWAVだけを標準出力へ出し、完了表示を標準エラーへ出します。合成完了後にWAV全体を出力する方式で、合成途中のストリーミングではありません。
+
+```sh
+utautts-cli --voicebank "voice/足立レイver3.5.0" --text-file message.txt --out - > speech.wav
+```
+
+WAVを標準出力へ出す場合、`--write-text`と`--write-lab`は使えません。`--plan-out`と`--ustx-out`へのファイル保存は併用できます。
+
+Windows PowerShell 5.1など、外部コマンドの出力を文字列へ変換する環境ではWAVのリダイレクトを避けてください。`--out speech.wav`で直接保存するか、バイナリ出力を保つPowerShell 7.4以降などを使います。
+
+合成・入出力・必須引数のエラーは終了コード1、未知のフラグなどフラグ解析のエラーは2を返します。原音の選択と配置は`--plan-out`で確認できます。
 
 ## 手動ピッチとモーラ長
 

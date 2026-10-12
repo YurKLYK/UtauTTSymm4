@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"flag"
+	flagpkg "flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -30,11 +31,19 @@ func main() {
 	}
 }
 
-func run() (runErr error) {
+func run() error {
+	return runCLI(os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
+}
+
+func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr error) {
+	flag := flagpkg.NewFlagSet("utautts-cli", flagpkg.ContinueOnError)
+	flag.SetOutput(stderr)
 	var (
 		voicebankPath            string
 		reading                  string
 		text                     string
+		textFile                 string
+		readingFile              string
 		tone                     string
 		color                    string
 		outPath                  string
@@ -96,11 +105,13 @@ func run() (runErr error) {
 	flag.StringVar(&reading, "kana", "", "kana reading to synthesize")
 	flag.StringVar(&reading, "reading", "", "pronunciation to synthesize (kana, ARPAbet, or Pinyin)")
 	flag.StringVar(&text, "text", "", "text to synthesize")
+	flag.StringVar(&textFile, "text-file", "", "UTF-8 text file (- reads standard input; exclusive with --text)")
+	flag.StringVar(&readingFile, "reading-file", "", "UTF-8 pronunciation file (- reads standard input; exclusive with --reading/--kana)")
 	flag.StringVar(&language, "language", "ja", "language: ja, en, or zh")
 	flag.StringVar(&phonemizer, "phonemizer", "", "phonemizer ID (default: selected by language)")
 	flag.StringVar(&tone, "tone", "C4", "voicebank tone used with prefix.map")
 	flag.StringVar(&color, "color", "", "voicebank subbank/color (character.yaml)")
-	flag.StringVar(&outPath, "out", "", "output WAV path")
+	flag.StringVar(&outPath, "out", "", "output WAV path (- writes standard output)")
 	flag.StringVar(&planPath, "plan-out", "", "optional synthesis plan JSON path")
 	flag.StringVar(&ustxOut, "ustx-out", "", "optional OpenUtau USTX project path")
 	flag.StringVar(&dictionaryPath, "dictionary", "", "optional user dictionary JSON path")
@@ -150,10 +161,55 @@ func run() (runErr error) {
 	flag.StringVar(&textEncoding, "text-encoding", sidecar.EncodingUTF8, "text sidecar encoding: utf-8 or shift_jis")
 	flag.Func("renderer-dir", "renderer plugin directory (repeatable)", func(value string) error { rendererDirectories = append(rendererDirectories, value); return nil })
 	flag.Func("model-dir", "prosody model directory (repeatable)", func(value string) error { modelDirectories = append(modelDirectories, value); return nil })
-	flag.Parse()
+	if err := flag.Parse(args); err != nil {
+		if errors.Is(err, flagpkg.ErrHelp) {
+			return nil
+		}
+		return err
+	}
 	if showVersion {
-		fmt.Printf("%s %s\n", appinfo.Name(), appinfo.Version())
-		return nil
+		_, err := fmt.Fprintf(stdout, "%s %s\n", appinfo.Name(), appinfo.Version())
+		return err
+	}
+	if voicebankPath == "" || outPath == "" {
+		flag.Usage()
+		return errors.New("--voicebank and --out are required")
+	}
+	var textSpecified, readingSpecified bool
+	flag.Visit(func(option *flagpkg.Flag) {
+		switch option.Name {
+		case "text":
+			textSpecified = true
+		case "reading", "kana":
+			readingSpecified = true
+		}
+	})
+	if textFile != "" && textSpecified || readingFile != "" && readingSpecified {
+		return errors.New("--text-file conflicts with --text; --reading-file conflicts with --reading/--kana")
+	}
+	if textFile == "-" && readingFile == "-" {
+		return errors.New("only one input can read standard input")
+	}
+	if outPath == "-" && (writeText || writeLab) {
+		return errors.New("--write-text and --write-lab require a WAV file path")
+	}
+	if textFile != "" {
+		var err error
+		text, err = readUtteranceFile(textFile, stdin)
+		if err != nil {
+			return fmt.Errorf("read text input: %w", err)
+		}
+	}
+	if readingFile != "" {
+		var err error
+		reading, err = readUtteranceFile(readingFile, stdin)
+		if err != nil {
+			return fmt.Errorf("read pronunciation input: %w", err)
+		}
+	}
+	if reading == "" && text == "" {
+		flag.Usage()
+		return errors.New("either --text, --reading, --text-file or --reading-file is required")
 	}
 	runtime, err := synth.NewRuntime(synth.RuntimeConfig{
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
@@ -172,11 +228,6 @@ func run() (runErr error) {
 	}
 	defer release()
 	resolver := runtime.Service
-
-	if voicebankPath == "" || (reading == "" && text == "") || outPath == "" {
-		flag.Usage()
-		return errors.New("--voicebank, --out, and either --text or --reading are required")
-	}
 
 	pitchFactors, err := loadPitchFactors(pitchContourPath, pitchContourCase)
 	if err != nil {
@@ -246,10 +297,12 @@ func run() (runErr error) {
 	if exportText == "" {
 		exportText = reading
 	}
-	if err := synth.WriteFiles(outPath, output, synth.ExportOptions{
-		Text: exportText, WriteText: writeText, WriteLab: writeLab, TextEncoding: textEncoding,
-	}); err != nil {
-		return err
+	if outPath != "-" {
+		if err := synth.WriteFiles(outPath, output, synth.ExportOptions{
+			Text: exportText, WriteText: writeText, WriteLab: writeLab, TextEncoding: textEncoding,
+		}); err != nil {
+			return err
+		}
 	}
 	if planPath != "" {
 		data, err := json.MarshalIndent(output.RenderedPlan(), "", "  ")
@@ -275,8 +328,16 @@ func run() (runErr error) {
 	}
 
 	duration := output.DurationMS / 1000
-	fmt.Printf("wrote %s (%.2fs, %d Hz, %d units)\n", outPath, duration, output.Audio.SampleRate, len(output.Plan.Units))
-	return nil
+	summary := stdout
+	if outPath == "-" {
+		audio := utautts.Audio{SampleRate: output.Audio.SampleRate, Channels: output.Audio.Channels, Samples: output.Audio.Data}
+		if err := audio.WriteWAV(stdout); err != nil {
+			return fmt.Errorf("write WAV to standard output: %w", err)
+		}
+		summary = stderr
+	}
+	_, err = fmt.Fprintf(summary, "wrote %s (%.2fs, %d Hz, %d units)\n", outPath, duration, output.Audio.SampleRate, len(output.Plan.Units))
+	return err
 }
 
 func loadResamplerExpressions(path string) ([]render.ResamplerExpression, error) {
