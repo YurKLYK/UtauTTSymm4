@@ -1,8 +1,10 @@
 package synth
 
 import (
+	"context"
 	"fmt"
 
+	"utautts/internal/lifecycle"
 	"utautts/internal/plugin"
 	"utautts/internal/render"
 )
@@ -19,6 +21,7 @@ type Runtime struct {
 	Catalog  *plugin.Catalog
 	Renderer string
 	Service  *Service
+	scope    *lifecycle.Scope
 }
 
 func NewRuntime(config RuntimeConfig, voicebanks VoicebankResolver) (*Runtime, error) {
@@ -29,9 +32,24 @@ func NewRuntime(config RuntimeConfig, voicebanks VoicebankResolver) (*Runtime, e
 	if renderer, ok := catalog.Renderer(config.Renderer); ok {
 		config.Renderer = renderer.ID
 	}
+	scope := lifecycle.New()
+	service := NewService(catalog, config.Renderer, config.WorldlineBridgePath,
+		config.OpenJTalkPath, config.OpenJTalkDictionary, voicebanks)
+	service.scope = scope
 	return &Runtime{
 		Catalog: catalog, Renderer: config.Renderer,
-		Service: NewService(catalog, config.Renderer, config.WorldlineBridgePath,
-			config.OpenJTalkPath, config.OpenJTalkDictionary, voicebanks),
+		Service: service, scope: scope,
 	}, nil
+}
+
+func (r *Runtime) Begin(ctx context.Context) (context.Context, func(), error) {
+	return r.scope.Begin(ctx)
+}
+
+func (r *Runtime) Reload(reload func() error) error {
+	return r.scope.Reset(reload)
+}
+
+func (r *Runtime) Close() error {
+	return r.scope.Close()
 }

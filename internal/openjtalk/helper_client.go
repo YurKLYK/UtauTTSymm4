@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"sync"
 
+	"utautts/internal/lifecycle"
 	"utautts/internal/processutil"
 )
 
@@ -24,9 +25,22 @@ type frontendHelperProcess struct {
 var sharedFrontendHelper frontendHelperProcess
 
 func invokeFrontendHelper(ctx context.Context, helper, dictionary, text string) ([]byte, error) {
-	client := &sharedFrontendHelper
+	client, err := lifecycle.Resource(ctx, "openjtalk.helper", &sharedFrontendHelper,
+		func() *frontendHelperProcess { return &frontendHelperProcess{} },
+		func(client *frontendHelperProcess) error {
+			client.mutex.Lock()
+			defer client.mutex.Unlock()
+			client.stop()
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
 	client.mutex.Lock()
 	defer client.mutex.Unlock()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	key := helper + "\x00" + dictionary
 	if client.cmd == nil || client.key != key {
 		client.stop()
@@ -38,9 +52,12 @@ func invokeFrontendHelper(ctx context.Context, helper, dictionary, text string) 
 		}
 		stdout, err := command.StdoutPipe()
 		if err != nil {
+			_ = stdin.Close()
 			return nil, err
 		}
 		if err := command.Start(); err != nil {
+			_ = stdin.Close()
+			_ = stdout.Close()
 			return nil, err
 		}
 		client.key, client.cmd, client.stdin, client.stdout = key, command, stdin, bufio.NewReader(stdout)
@@ -57,8 +74,9 @@ func invokeFrontendHelper(ctx context.Context, helper, dictionary, text string) 
 		err  error
 	}
 	resultChannel := make(chan readResult, 1)
+	stdout := client.stdout
 	go func() {
-		line, err := client.stdout.ReadBytes('\n')
+		line, err := stdout.ReadBytes('\n')
 		resultChannel <- readResult{line, err}
 	}()
 	select {

@@ -76,7 +76,7 @@ func resolveProsodyModelForProfile(cfg Config, profile languageProfile) (*prosod
 		}
 		return nil, statErr
 	}
-	return loadProsodyModelCached(path)
+	return loadProsodyModelCached(cfg.Context, path)
 }
 
 // 言語別の代替抑揚モデル。configuredPathと同じディレクトリから読む。

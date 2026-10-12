@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"utautts/internal/audio"
+	"utautts/internal/lifecycle"
 	"utautts/internal/provider"
 )
 
@@ -33,7 +34,15 @@ func renderSession(ctx context.Context, bridgePath string, score provider.Neural
 	}
 	defer os.RemoveAll(temp)
 
-	session, key, err := diffSingerProviderSessions.get(ctx, executable)
+	pool, err := lifecycle.Resource(ctx, "diffsinger.providers", &diffSingerProviderSessions,
+		func() *diffSingerProviderSessionPool {
+			return &diffSingerProviderSessionPool{sessions: make(map[string]*provider.Session)}
+		},
+		(*diffSingerProviderSessionPool).closeAll)
+	if err != nil {
+		return nil, err
+	}
+	session, key, err := pool.get(ctx, executable)
 	if err != nil {
 		return nil, fmt.Errorf("start DiffSinger provider session: %w", err)
 	}
@@ -45,7 +54,7 @@ func renderSession(ctx context.Context, bridgePath string, score provider.Neural
 	}, provider.RenderOptions{})
 	if err != nil {
 		if !session.IsAlive() {
-			diffSingerProviderSessions.discard(key, session)
+			pool.discard(key, session)
 		}
 		return nil, fmt.Errorf("DiffSinger provider session: %w", err)
 	}

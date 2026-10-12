@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 
+	"utautts/internal/lifecycle"
 	"utautts/internal/provider"
 )
 
@@ -21,16 +22,35 @@ type bridgeProcess struct {
 var sharedBridge bridgeProcess
 var bridgeGate = make(chan struct{}, 1)
 
+type scopedBridge struct {
+	process bridgeProcess
+	gate    chan struct{}
+}
+
 func InvokeReport(ctx context.Context, bridge, jobPath, outputPath string, report *[]provider.WorldSpeechResult) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	client, gate := &sharedBridge, bridgeGate
+	owned, err := lifecycle.Resource(ctx, "worldline.bridge", (*scopedBridge)(nil),
+		func() *scopedBridge { return &scopedBridge{gate: make(chan struct{}, 1)} },
+		func(client *scopedBridge) error {
+			client.gate <- struct{}{}
+			defer func() { <-client.gate }()
+			return client.process.stop()
+		})
+	if err != nil {
+		return err
+	}
+	if owned != nil {
+		client, gate = &owned.process, owned.gate
+	}
 	select {
-	case bridgeGate <- struct{}{}:
+	case gate <- struct{}{}:
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	defer func() { <-bridgeGate }()
+	defer func() { <-gate }()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -44,7 +64,6 @@ func InvokeReport(ctx context.Context, bridge, jobPath, outputPath string, repor
 		return err
 	}
 
-	client := &sharedBridge
 	if client.session == nil || client.path != bridge || client.provider != providerID || !client.session.IsAlive() {
 		client.stop()
 		session, startErr := provider.StartSession(ctx, provider.SessionOptions{
@@ -105,9 +124,11 @@ func Close() {
 	<-bridgeGate
 }
 
-func (client *bridgeProcess) stop() {
+func (client *bridgeProcess) stop() error {
+	var err error
 	if client.session != nil {
-		_ = client.session.Close()
+		err = client.session.Close()
 	}
 	client.path, client.provider, client.session = "", "", nil
+	return err
 }

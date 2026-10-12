@@ -185,7 +185,7 @@ func resolveLanguagePhonemizer(cfg Config) (string, string, error) {
 	bank := cfg.Voicebank
 	if bank == nil && strings.TrimSpace(cfg.VoicebankPath) != "" {
 		// 読込失敗時は推定を諦め、言語既定へ委ねる。
-		if loaded, err := loadVoicebankCached(cfg.VoicebankPath); err == nil {
+		if loaded, err := loadVoicebankCachedContext(cfg.Context, cfg.VoicebankPath); err == nil {
 			bank = loaded
 		}
 	}
@@ -220,7 +220,7 @@ func resolveProsodyModel(cfg Config) (*prosody.Model, error) {
 	if cfg.ProsodyModelPath == "" {
 		return nil, nil
 	}
-	return loadProsodyModelCached(cfg.ProsodyModelPath)
+	return loadProsodyModelCached(cfg.Context, cfg.ProsodyModelPath)
 }
 
 func resolveProsodyModelForLanguage(cfg Config, language string) (*prosody.Model, error) {
@@ -313,7 +313,7 @@ func SynthesizeWithOptions(cfg Config, providerOptions render.ProviderOptions) (
 	bank := cfg.Voicebank
 	var err error
 	if bank == nil {
-		bank, err = loadVoicebankCached(cfg.VoicebankPath)
+		bank, err = loadVoicebankCachedContext(cfg.Context, cfg.VoicebankPath)
 		if err != nil {
 			return nil, fmt.Errorf("load voicebank: %w", err)
 		}

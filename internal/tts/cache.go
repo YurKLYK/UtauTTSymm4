@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"utautts/internal/frontend"
+	"utautts/internal/lifecycle"
 	"utautts/internal/neural"
 	"utautts/internal/openjtalk"
 	"utautts/internal/plugin"
@@ -23,7 +24,7 @@ import (
 const maxAnalysisCacheEntries = 512
 const maxProsodyCacheEntries = 128
 
-var synthesisCache = struct {
+type synthesisCacheState struct {
 	sync.RWMutex
 	banks            map[string]*voicebank.Bank
 	models           map[string]modelCacheEntry
@@ -31,11 +32,21 @@ var synthesisCache = struct {
 	analysisOrder    []analysisCacheKey
 	computations     map[prosodyComputationKey]prosodyComputation
 	computationOrder []prosodyComputationKey
-}{
-	banks:        make(map[string]*voicebank.Bank),
-	models:       make(map[string]modelCacheEntry),
-	analyses:     make(map[analysisCacheKey]*openjtalk.Analysis),
-	computations: make(map[prosodyComputationKey]prosodyComputation),
+}
+
+func newSynthesisCache() *synthesisCacheState {
+	return &synthesisCacheState{
+		banks: make(map[string]*voicebank.Bank), models: make(map[string]modelCacheEntry),
+		analyses:     make(map[analysisCacheKey]*openjtalk.Analysis),
+		computations: make(map[prosodyComputationKey]prosodyComputation),
+	}
+}
+
+var synthesisCache = newSynthesisCache()
+
+func cacheFor(ctx context.Context) (*synthesisCacheState, error) {
+	return lifecycle.Resource(ctx, "tts.cache", synthesisCache, newSynthesisCache,
+		func(cache *synthesisCacheState) error { cache.clear(); return nil })
 }
 
 type modelCacheEntry struct {
@@ -149,10 +160,14 @@ func resolveProsodyComputation(cfg Config, profile languageProfile, model *proso
 		predictions, err := predictMorae(cfg, profile, model, morae, features)
 		return features, predictions, err
 	}
+	cache, err := cacheFor(cfg.Context)
+	if err != nil {
+		return nil, nil, err
+	}
 	key := prosodyComputationKeyFor(cfg)
-	synthesisCache.RLock()
-	entry, ok := synthesisCache.computations[key]
-	synthesisCache.RUnlock()
+	cache.RLock()
+	entry, ok := cache.computations[key]
+	cache.RUnlock()
 	if ok && moraeEqual(entry.morae, morae) {
 		return entry.features, entry.predictions, nil
 	}
@@ -164,28 +179,38 @@ func resolveProsodyComputation(cfg Config, profile languageProfile, model *proso
 	if err != nil {
 		return nil, nil, err
 	}
-	synthesisCache.Lock()
-	synthesisCache.computations[key] = prosodyComputation{
+	cache.Lock()
+	if _, exists := cache.computations[key]; !exists {
+		cache.computationOrder = append(cache.computationOrder, key)
+	}
+	cache.computations[key] = prosodyComputation{
 		morae: append([]frontend.Mora(nil), morae...), features: features, predictions: predictions,
 	}
-	synthesisCache.computationOrder = append(synthesisCache.computationOrder, key)
-	if len(synthesisCache.computationOrder) > maxProsodyCacheEntries {
-		oldest := synthesisCache.computationOrder[0]
-		synthesisCache.computationOrder = synthesisCache.computationOrder[1:]
-		delete(synthesisCache.computations, oldest)
+	if len(cache.computationOrder) > maxProsodyCacheEntries {
+		oldest := cache.computationOrder[0]
+		cache.computationOrder = cache.computationOrder[1:]
+		delete(cache.computations, oldest)
 	}
-	synthesisCache.Unlock()
+	cache.Unlock()
 	return features, predictions, nil
 }
 
 func loadVoicebankCached(path string) (*voicebank.Bank, error) {
+	return loadVoicebankCachedContext(nil, path)
+}
+
+func loadVoicebankCachedContext(ctx context.Context, path string) (*voicebank.Bank, error) {
+	cache, err := cacheFor(ctx)
+	if err != nil {
+		return nil, err
+	}
 	key, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
-	synthesisCache.RLock()
-	bank := synthesisCache.banks[key]
-	synthesisCache.RUnlock()
+	cache.RLock()
+	bank := cache.banks[key]
+	cache.RUnlock()
 	if bank != nil {
 		return bank, nil
 	}
@@ -193,17 +218,21 @@ func loadVoicebankCached(path string) (*voicebank.Bank, error) {
 	if err != nil {
 		return nil, err
 	}
-	synthesisCache.Lock()
-	if existing := synthesisCache.banks[key]; existing != nil {
+	cache.Lock()
+	if existing := cache.banks[key]; existing != nil {
 		bank = existing
 	} else {
-		synthesisCache.banks[key] = bank
+		cache.banks[key] = bank
 	}
-	synthesisCache.Unlock()
+	cache.Unlock()
 	return bank, nil
 }
 
-func loadProsodyModelCached(path string) (*prosody.Model, error) {
+func loadProsodyModelCached(ctx context.Context, path string) (*prosody.Model, error) {
+	cache, err := cacheFor(ctx)
+	if err != nil {
+		return nil, err
+	}
 	key, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
@@ -213,9 +242,9 @@ func loadProsodyModelCached(path string) (*prosody.Model, error) {
 		return nil, err
 	}
 	modTime := info.ModTime().UnixNano()
-	synthesisCache.RLock()
-	entry, ok := synthesisCache.models[key]
-	synthesisCache.RUnlock()
+	cache.RLock()
+	entry, ok := cache.models[key]
+	cache.RUnlock()
 	if ok && entry.size == info.Size() && entry.modTime == modTime && entry.model != nil {
 		return entry.model, nil
 	}
@@ -223,50 +252,58 @@ func loadProsodyModelCached(path string) (*prosody.Model, error) {
 	if err != nil {
 		return nil, err
 	}
-	synthesisCache.Lock()
-	synthesisCache.models[key] = modelCacheEntry{size: info.Size(), modTime: modTime, model: model}
-	synthesisCache.Unlock()
+	cache.Lock()
+	cache.models[key] = modelCacheEntry{size: info.Size(), modTime: modTime, model: model}
+	cache.Unlock()
 	return model, nil
 }
 
 func analyzeOpenJTalkCached(ctx context.Context, text string, cfg openjtalk.Config) (*openjtalk.Analysis, error) {
-	key := analysisCacheKey{text: text, helper: cfg.HelperPath, dictionary: cfg.DictionaryPath}
-	synthesisCache.RLock()
-	analysis := synthesisCache.analyses[key]
-	synthesisCache.RUnlock()
-	if analysis != nil {
-		return analysis, nil
-	}
-	analysis, err := openjtalk.AnalyzeContext(ctx, text, cfg)
+	cache, err := cacheFor(ctx)
 	if err != nil {
 		return nil, err
 	}
-	synthesisCache.Lock()
-	if existing := synthesisCache.analyses[key]; existing != nil {
+	key := analysisCacheKey{text: text, helper: cfg.HelperPath, dictionary: cfg.DictionaryPath}
+	cache.RLock()
+	analysis := cache.analyses[key]
+	cache.RUnlock()
+	if analysis != nil {
+		return analysis, nil
+	}
+	analysis, err = openjtalk.AnalyzeContext(ctx, text, cfg)
+	if err != nil {
+		return nil, err
+	}
+	cache.Lock()
+	if existing := cache.analyses[key]; existing != nil {
 		analysis = existing
 	} else {
-		synthesisCache.analyses[key] = analysis
-		synthesisCache.analysisOrder = append(synthesisCache.analysisOrder, key)
-		if len(synthesisCache.analysisOrder) > maxAnalysisCacheEntries {
-			oldest := synthesisCache.analysisOrder[0]
-			synthesisCache.analysisOrder = synthesisCache.analysisOrder[1:]
-			delete(synthesisCache.analyses, oldest)
+		cache.analyses[key] = analysis
+		cache.analysisOrder = append(cache.analysisOrder, key)
+		if len(cache.analysisOrder) > maxAnalysisCacheEntries {
+			oldest := cache.analysisOrder[0]
+			cache.analysisOrder = cache.analysisOrder[1:]
+			delete(cache.analyses, oldest)
 		}
 	}
-	synthesisCache.Unlock()
+	cache.Unlock()
 	return analysis, nil
 }
 
 func ClearCaches() {
 	// 同じパスの旧モデルが子プロセスに残らないよう、ONNXセッションも閉じる。
 	_ = neural.CloseSessions()
-	synthesisCache.Lock()
-	synthesisCache.banks = make(map[string]*voicebank.Bank)
-	synthesisCache.models = make(map[string]modelCacheEntry)
-	synthesisCache.analyses = make(map[analysisCacheKey]*openjtalk.Analysis)
-	synthesisCache.analysisOrder = nil
-	synthesisCache.computations = make(map[prosodyComputationKey]prosodyComputation)
-	synthesisCache.computationOrder = nil
-	synthesisCache.Unlock()
+	synthesisCache.clear()
 	render.ClearWAVCache()
+}
+
+func (cache *synthesisCacheState) clear() {
+	cache.Lock()
+	defer cache.Unlock()
+	cache.banks = make(map[string]*voicebank.Bank)
+	cache.models = make(map[string]modelCacheEntry)
+	cache.analyses = make(map[analysisCacheKey]*openjtalk.Analysis)
+	cache.analysisOrder = nil
+	cache.computations = make(map[prosodyComputationKey]prosodyComputation)
+	cache.computationOrder = nil
 }

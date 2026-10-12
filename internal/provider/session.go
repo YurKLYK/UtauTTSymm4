@@ -243,6 +243,9 @@ func (session *Session) Render(ctx context.Context, request RenderRequest, optio
 	}
 	session.renderMu.Lock()
 	defer session.renderMu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return Result{}, err
+	}
 	if request.Type == "" {
 		request.Type = MessageRender
 	}

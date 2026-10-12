@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"utautts/internal/engine"
+	"utautts/internal/lifecycle"
 	"utautts/internal/plan"
 	"utautts/internal/plugin"
 	"utautts/internal/prosody"
@@ -173,6 +174,7 @@ type Service struct {
 	openJTalkPath       string
 	openJTalkDictionary string
 	voicebanks          VoicebankResolver
+	scope               *lifecycle.Scope
 }
 
 func NewService(catalog *plugin.Catalog, renderer, worldlineBridgePath, openJTalkPath, openJTalkDictionary string, voicebanks VoicebankResolver) *Service {
@@ -189,11 +191,16 @@ func (s *Service) Synthesize(request Request) (*Result, error) {
 }
 
 func (s *Service) SynthesizeContext(ctx context.Context, request Request) (*Result, error) {
+	ctx, release, err := s.begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	resolved, err := s.ResolveSynthesis(request)
 	if err != nil {
 		return nil, err
 	}
-	resolved.Config.Context = ctx
+	resolved.Config.Context = s.bind(ctx)
 	return SynthesizeResolved(resolved)
 }
 
@@ -202,6 +209,7 @@ func (s *Service) ResolveSynthesis(request Request) (ResolvedRequest, error) {
 	if err != nil {
 		return ResolvedRequest{}, err
 	}
+	cfg.Context = s.bind(nil)
 	return ResolvedRequest{Config: cfg, RendererID: rendererID, ProviderOptions: providerOptions}, nil
 }
 
@@ -214,6 +222,14 @@ func SynthesizeConfig(cfg tts.Config, rendererID string) (*Result, error) {
 }
 
 func SynthesizeConfigWithOptions(cfg tts.Config, rendererID string, providerOptions render.ProviderOptions) (*Result, error) {
+	if scope := lifecycle.FromContext(cfg.Context); scope != nil {
+		ctx, release, err := scope.Begin(cfg.Context)
+		if err != nil {
+			return nil, err
+		}
+		defer release()
+		cfg.Context = ctx
+	}
 	result, err := tts.SynthesizeWithOptions(cfg, providerOptions)
 	if err != nil {
 		return nil, err
@@ -227,6 +243,11 @@ func (s *Service) PredictProsody(request Request) (*tts.ProsodyPreview, string, 
 }
 
 func (s *Service) PredictProsodyContext(ctx context.Context, request Request) (*tts.ProsodyPreview, string, error) {
+	ctx, release, err := s.begin(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	defer release()
 	cfg, rendererID, _, err := s.config(request, false)
 	if err != nil {
 		return nil, "", err
@@ -240,6 +261,11 @@ func (s *Service) PredictProsodyContext(ctx context.Context, request Request) (*
 }
 
 func (s *Service) AnalyzeContext(ctx context.Context, request Request) (*tts.ProsodyPreview, error) {
+	ctx, release, err := s.begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
 	request = request.Normalized()
 	dictionary := DictionaryMap(request.Dictionary)
 	voicebankPath := request.VoicebankPath
@@ -266,6 +292,23 @@ func (s *Service) AnalyzeContext(ctx context.Context, request Request) (*tts.Pro
 		Dictionary:    dictionary, OpenJTalkPath: s.openJTalkPath,
 		OpenJTalkDictionaryPath: s.openJTalkDictionary,
 	})
+}
+
+func (s *Service) bind(ctx context.Context) context.Context {
+	if s.scope != nil {
+		return s.scope.Bind(ctx)
+	}
+	return ctx
+}
+
+func (s *Service) begin(ctx context.Context) (context.Context, func(), error) {
+	if s.scope != nil {
+		return s.scope.Begin(ctx)
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return ctx, func() {}, ctx.Err()
 }
 
 func (s *Service) config(request Request, requireVoicebank bool) (tts.Config, string, render.ProviderOptions, error) {

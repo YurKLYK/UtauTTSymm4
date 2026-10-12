@@ -13,6 +13,7 @@ import (
 
 	"utautts/internal/audio"
 	"utautts/internal/engine"
+	"utautts/internal/lifecycle"
 	"utautts/internal/plan"
 	"utautts/internal/provider"
 )
@@ -81,7 +82,15 @@ func (renderer externalUnitRenderer) Render(synthesisPlan *plan.Plan, cfg Config
 		return nil, fmt.Errorf("write external unit renderer job: %w", err)
 	}
 
-	session, key, err := externalProviderSessions.get(cfg.Context, renderer.definition)
+	pool, err := lifecycle.Resource(cfg.Context, "render.external-providers", &externalProviderSessions,
+		func() *externalProviderSessionPool {
+			return &externalProviderSessionPool{sessions: make(map[string]*provider.Session)}
+		},
+		(*externalProviderSessionPool).closeAll)
+	if err != nil {
+		return nil, err
+	}
+	session, key, err := pool.get(cfg.Context, renderer.definition)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +105,7 @@ func (renderer externalUnitRenderer) Render(synthesisPlan *plan.Plan, cfg Config
 	}})
 	if err != nil {
 		if !session.IsAlive() {
-			externalProviderSessions.discard(key, session)
+			pool.discard(key, session)
 		}
 		return nil, fmt.Errorf("external unit renderer: %w", err)
 	}
