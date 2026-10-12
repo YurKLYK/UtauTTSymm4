@@ -149,7 +149,10 @@ type Request struct {
 	RendererSettings map[string]json.RawMessage
 }
 
-type DictionaryEntry struct{ Surface, Reading string }
+type DictionaryEntry struct {
+	Surface string `json:"surface"`
+	Reading string `json:"reading"`
+}
 
 // Options uses nil for defaults. Non-nil values, including 0 and false, are
 // explicit. MoraDurationMS must be positive; PauseDurationMS and ReleaseMS may be 0.

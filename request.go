@@ -14,7 +14,7 @@ func (r Request) internal() (synth.Request, error) {
 	if strings.TrimSpace(r.Text) == "" && strings.TrimSpace(r.Reading) == "" {
 		return synth.Request{}, fmt.Errorf("%w: text or reading is required", ErrInvalidRequest)
 	}
-	input := synth.DefaultRequest()
+	input := synth.ApplyCommonOptions(synth.DefaultRequest(), synth.CommonOptions(r.Options))
 	input.Text, input.Reading, input.Language, input.Phonemizer = r.Text, r.Reading, r.Language, r.Phonemizer
 	input.VoicebankID, input.Renderer, input.ModelID = r.VoicebankID, r.RendererID, r.ModelID
 	input.Tone, input.Color = r.Tone, r.Color
@@ -25,13 +25,12 @@ func (r Request) internal() (synth.Request, error) {
 		input.Dictionary = append(input.Dictionary, synth.DictionaryEntry{Surface: entry.Surface, Reading: entry.Reading})
 	}
 	numbers := []struct {
-		id     string
-		value  *float64
-		target *float64
+		id    string
+		value *float64
 	}{
-		{"mora_duration_ms", r.Options.MoraDurationMS, &input.MoraDurationMS},
-		{"pause_duration_ms", r.Options.PauseDurationMS, &input.PauseDurationMS},
-		{"intonation_strength", r.Options.IntonationStrength, &input.IntonationStrength},
+		{"mora_duration_ms", r.Options.MoraDurationMS},
+		{"pause_duration_ms", r.Options.PauseDurationMS},
+		{"intonation_strength", r.Options.IntonationStrength},
 	}
 	for _, option := range numbers {
 		if option.value == nil {
@@ -41,22 +40,10 @@ func (r Request) internal() (synth.Request, error) {
 		if err := validateNumber(option.id, *option.value, setting.Min, setting.Max); err != nil {
 			return synth.Request{}, err
 		}
-		*option.target = *option.value
 	}
-	input.PauseDurationSet = r.Options.PauseDurationMS != nil
 	if r.Options.ReleaseMS != nil {
 		if err := validateNumber("release_ms", *r.Options.ReleaseMS, new(0.0), nil); err != nil {
 			return synth.Request{}, err
-		}
-		input.ReleaseMS, input.ReleaseSet = *r.Options.ReleaseMS, true
-	}
-	for _, option := range []struct{ value, target *bool }{
-		{r.Options.ApplyPitch, &input.ApplyPitch}, {r.Options.ContextDuration, &input.ContextDuration},
-		{r.Options.BoundaryTone, &input.BoundaryTone}, {r.Options.StretchAdapt, &input.StretchAdapt},
-		{r.Options.PauseContext, &input.PauseContext}, {r.Options.EnglishWeakForm, &input.EnglishWeakForm},
-	} {
-		if option.value != nil {
-			*option.target = *option.value
 		}
 	}
 	input.RendererSettings = make(map[string]json.RawMessage, len(r.RendererSettings))

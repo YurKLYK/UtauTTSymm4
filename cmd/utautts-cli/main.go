@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 	"syscall"
 
+	utautts "github.com/yh2237/UtauTTS"
 	"github.com/yh2237/UtauTTS/internal/appinfo"
+	"github.com/yh2237/UtauTTS/internal/entryinput"
 	"github.com/yh2237/UtauTTS/internal/openutau"
 	"github.com/yh2237/UtauTTS/internal/prosody"
 	"github.com/yh2237/UtauTTS/internal/render"
@@ -196,37 +198,29 @@ func run() (runErr error) {
 	if err != nil {
 		return err
 	}
-	synthesisRequest := synth.Request{
+	request := utautts.Request{
+		Text: text, Reading: reading, Language: language, Phonemizer: phonemizer,
+		Tone: tone, Color: color, ModelID: prosodyPath, Dictionary: dictionary,
+		Options: utautts.Options{
+			MoraDurationMS: &moraMS, PauseDurationMS: &pauseMS, ReleaseMS: &releaseMS,
+			IntonationStrength: &intonationStrength, ApplyPitch: &applyPitch,
+			ContextDuration: &contextDuration, BoundaryTone: &boundaryTone,
+			StretchAdapt: &stretchAdapt, PauseContext: &pauseContext, EnglishWeakForm: &englishWeakForm,
+		},
+	}
+	// 配置、詳細編集、評価用入力は通常の発話要求に含めない。
+	synthesisRequest := entryinput.Apply(request, synth.Request{
 		VoicebankPath:           voicebankPath,
-		Text:                    text,
-		Reading:                 reading,
-		Language:                language,
-		Phonemizer:              phonemizer,
-		Dictionary:              dictionary,
-		Tone:                    tone,
-		Color:                   color,
-		MoraDurationMS:          moraMS,
-		PauseDurationMS:         pauseMS,
 		MoraDurationsMS:         moraDurations,
 		LeadingPreutteranceMS:   leadingPreutteranceMS,
-		ReleaseMS:               releaseMS,
-		ReleaseSet:              true,
-		ModelID:                 prosodyPath,
 		ManualPitchPath:         manualPitchPath,
 		ProsodyFeatures:         prosodyFeatures,
 		ProsodyPitchOnly:        prosodyPitchOnly,
 		PitchFactors:            pitchFactors,
-		ApplyPitch:              applyPitch,
-		IntonationStrength:      intonationStrength,
-		ContextDuration:         contextDuration,
 		ContextDurationStrength: contextDurationStrength,
-		BoundaryTone:            boundaryTone,
 		BoundaryToneStrength:    boundaryToneStrength,
-		StretchAdapt:            stretchAdapt,
 		StretchAdaptStrength:    stretchAdaptStrength,
-		PauseContext:            pauseContext,
 		PauseContextStrength:    pauseContextStrength,
-		EnglishWeakForm:         englishWeakForm,
 		CVVCTiming:              cvvcTiming,
 		CVVCTransitionGain:      cvvcTransitionGain,
 		CVVCPreBoundaryFade:     cvvcPreBoundaryFade,
@@ -238,7 +232,7 @@ func run() (runErr error) {
 		DiffSingerPitchMix:      diffSingerPitchMix,
 		DiffSingerExpr:          diffSingerExpr,
 		ResamplerExpressions:    resamplerExpressions,
-	}
+	})
 	resolvedSynthesis, err := resolver.ResolveSynthesis(synthesisRequest)
 	if err != nil {
 		return err
@@ -300,7 +294,7 @@ func loadResamplerExpressions(path string) ([]render.ResamplerExpression, error)
 	return values, nil
 }
 
-func loadDictionary(path string) ([]synth.DictionaryEntry, error) {
+func loadDictionary(path string) ([]utautts.DictionaryEntry, error) {
 	if path == "" {
 		return nil, nil
 	}
@@ -308,7 +302,7 @@ func loadDictionary(path string) ([]synth.DictionaryEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	var entries []synth.DictionaryEntry
+	var entries []utautts.DictionaryEntry
 	if err := json.Unmarshal(data, &entries); err != nil {
 		return nil, fmt.Errorf("decode user dictionary: %w", err)
 	}

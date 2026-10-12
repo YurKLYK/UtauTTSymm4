@@ -183,22 +183,7 @@ func TestBatchRejectsDuplicateArchiveNamesBeforeSynthesis(t *testing.T) {
 }
 
 func TestSynthesizeEndpointReportsWaveformRenderer(t *testing.T) {
-	root := t.TempDir()
-	wavPath := filepath.Join(root, "a.wav")
-	samples := make([]int16, 400)
-	for i := range samples {
-		samples[i] = 8000
-	}
-	if err := audio.WriteWav(wavPath, &audio.PCM{SampleRate: 1000, Channels: 1, Data: samples}); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	server := &Server{renderer: "waveform", catalog: &plugin.Catalog{Renderers: []plugin.Renderer{{ManifestVersion: 2, Kind: "synthesis-engine", ID: "waveform", DisplayName: "waveform", Contract: "unit-renderer", Provider: "waveform", ProviderVersion: "1"}}}, voicebanks: map[string]Voicebank{
-		"test": {ID: "test", Name: "test", Path: root},
-	}}
+	server := newWaveformTestServer(t)
 	body := bytes.NewBufferString(`{"kana":"あ","voicebank_id":"test","mora_duration_ms":100}`)
 	request := httptest.NewRequest(http.MethodPost, "/api/synthesize/audio", body)
 	request.Header.Set("Content-Type", "application/json")
@@ -213,12 +198,13 @@ func TestSynthesizeEndpointReportsWaveformRenderer(t *testing.T) {
 	}
 }
 
-func TestLabelAndBatchSidecarEndpoints(t *testing.T) {
+func newWaveformTestServer(t *testing.T) *Server {
+	t.Helper()
 	root := t.TempDir()
 	wavPath := filepath.Join(root, "a.wav")
 	samples := make([]int16, 400)
-	for index := range samples {
-		samples[index] = 8000
+	for i := range samples {
+		samples[i] = 8000
 	}
 	if err := audio.WriteWav(wavPath, &audio.PCM{SampleRate: 1000, Channels: 1, Data: samples}); err != nil {
 		t.Fatal(err)
@@ -226,9 +212,14 @@ func TestLabelAndBatchSidecarEndpoints(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "oto.ini"), []byte("a.wav=あ,0,0,0,0,0\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	server := &Server{renderer: "waveform", catalog: &plugin.Catalog{Renderers: []plugin.Renderer{{ManifestVersion: 2, Kind: "synthesis-engine", ID: "waveform", DisplayName: "waveform", Contract: "unit-renderer", Provider: "waveform", ProviderVersion: "1"}}}, voicebanks: map[string]Voicebank{
-		"test": {ID: "test", Path: root},
+
+	return &Server{renderer: "waveform", catalog: &plugin.Catalog{Renderers: []plugin.Renderer{{ManifestVersion: 2, Kind: "synthesis-engine", ID: "waveform", DisplayName: "waveform", Contract: "unit-renderer", Provider: "waveform", ProviderVersion: "1"}}}, voicebanks: map[string]Voicebank{
+		"test": {ID: "test", Name: "test", Path: root},
 	}}
+}
+
+func TestLabelAndBatchSidecarEndpoints(t *testing.T) {
+	server := newWaveformTestServer(t)
 	synthesis := `{"kana":"あ","voicebank_id":"test","mora_duration_ms":100}`
 
 	response := httptest.NewRecorder()
@@ -255,6 +246,40 @@ func TestLabelAndBatchSidecarEndpoints(t *testing.T) {
 		if !names[name] {
 			t.Fatalf("batch archive is missing %s: %#v", name, names)
 		}
+	}
+}
+
+func TestSynthesisInputCompatibility(t *testing.T) {
+	server := newWaveformTestServer(t)
+	synthesize := func(t *testing.T, fields string) *httptest.ResponseRecorder {
+		t.Helper()
+		body := `{"voicebank_id":"test","apply_pitch":false,` + fields + `}`
+		response := httptest.NewRecorder()
+		server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/api/synthesize/audio", strings.NewReader(body)))
+		if response.Code != http.StatusOK {
+			t.Fatalf("synthesis response = %d %s", response.Code, response.Body.String())
+		}
+		return response
+	}
+	for _, test := range []struct {
+		name, input, equivalent, different string
+	}{
+		{"legacy kana and ignored fields", `"kana":"あ","speech_timing":true,"word_boundary_envelope":true,"prosody_experiment":"old"`, `"reading":"あ"`, ""},
+		{"reading precedence", `"reading":"あ","kana":"unknown"`, `"reading":"あ"`, ""},
+		{"dictionary", `"text":"token","dictionary":[{"surface":"token","reading":"あ"}]`, `"reading":"ア"`, ""},
+		{"zero pause uses default", `"reading":"あ、あ","pause_duration_ms":0`, `"reading":"あ、あ"`, `"reading":"あ、あ","pause_duration_ms":40`},
+		{"map overrides typed duration", `"reading":"あ","mora_duration_ms":80,"renderer_settings":{"mora_duration_ms":160}`, `"reading":"あ","mora_duration_ms":160`, `"reading":"あ","mora_duration_ms":80`},
+		{"edited duration", `"reading":"あ","mora_duration_ms":80,"mora_durations_ms":[160]`, `"reading":"あ","mora_duration_ms":160`, `"reading":"あ","mora_duration_ms":80`},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, want := synthesize(t, test.input), synthesize(t, test.equivalent)
+			if !bytes.Equal(got.Body.Bytes(), want.Body.Bytes()) || got.Header().Get("X-UtauTTS-Reading") != want.Header().Get("X-UtauTTS-Reading") {
+				t.Fatal("compatible inputs produced different audio or reading")
+			}
+			if test.different != "" && bytes.Equal(got.Body.Bytes(), synthesize(t, test.different).Body.Bytes()) {
+				t.Fatal("duration setting did not affect the output")
+			}
+		})
 	}
 }
 

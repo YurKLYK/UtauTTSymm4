@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 func (request *SynthesisRequest) UnmarshalJSON(data []byte) error {
-	decoded := synthesisRequestAlias(synth.DefaultRequest())
+	decoded := synthesisRequestAlias(defaultSynthesisRequest())
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&decoded); err != nil {
@@ -20,10 +18,6 @@ func (request *SynthesisRequest) UnmarshalJSON(data []byte) error {
 	}
 	*request = SynthesisRequest(decoded)
 	return nil
-}
-
-func (request SynthesisRequest) synthRequest() synth.Request {
-	return synth.Request(request).Normalized()
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {

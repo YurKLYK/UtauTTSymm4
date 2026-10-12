@@ -15,8 +15,10 @@ import (
 	"strings"
 	"sync"
 
+	utautts "github.com/yh2237/UtauTTS"
 	"github.com/yh2237/UtauTTS/internal/audio"
 	"github.com/yh2237/UtauTTS/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/entryinput"
 	"github.com/yh2237/UtauTTS/internal/plugin"
 	"github.com/yh2237/UtauTTS/internal/render"
 	"github.com/yh2237/UtauTTS/internal/synth"
@@ -290,8 +292,8 @@ func (s *Server) handleRenderers(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	var request struct {
-		Text       string                  `json:"text"`
-		Dictionary []synth.DictionaryEntry `json:"dictionary"`
+		Text       string                    `json:"text"`
+		Dictionary []utautts.DictionaryEntry `json:"dictionary"`
 	}
 	if err := decodeJSONBody(w, r, &request); err != nil {
 		writeJSON(w, jsonDecodeStatus(err), map[string]string{"error": err.Error()})
@@ -305,9 +307,9 @@ func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": fmt.Sprintf("text is limited to %d characters", maxTextRunes)})
 		return
 	}
-	preview, err := s.synthesisService().AnalyzeContext(r.Context(), synth.Request{
+	preview, err := s.synthesisService().AnalyzeContext(r.Context(), entryinput.Apply(utautts.Request{
 		Text: request.Text, Dictionary: request.Dictionary,
-	})
+	}, synth.DefaultRequest()))
 	if err != nil {
 		writeJSON(w, contextErrorStatus(err, http.StatusUnprocessableEntity), map[string]string{"error": err.Error()})
 		return
@@ -419,11 +421,6 @@ func pathWithin(root, candidate string) (string, error) {
 	return candidate, nil
 }
 
-type SynthesisRequest synth.Request
-
-// synthesisRequestAliasはUnmarshalJSONの再帰を避けるための別名型。
-type synthesisRequestAlias SynthesisRequest
-
 func (s *Server) handleSynthesizeAudio(w http.ResponseWriter, r *http.Request) {
 	var request SynthesisRequest
 	if err := decodeJSONBody(w, r, &request); err != nil {
@@ -513,7 +510,10 @@ func (s *Server) synthesize(ctx context.Context, request SynthesisRequest) (*syn
 }
 
 func synthesisReading(request SynthesisRequest) string {
-	return synth.Request(request).ReadingOrKana()
+	if request.Reading != "" {
+		return request.Reading
+	}
+	return request.Kana
 }
 
 func contextErrorStatus(err error, fallback int) int {
