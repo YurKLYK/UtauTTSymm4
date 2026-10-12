@@ -2,11 +2,14 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/yh2237/UtauTTS/internal/entryinput"
 )
 
 const maxUtteranceBytes = 1 << 20
@@ -37,4 +40,19 @@ func readUtteranceFile(path string, stdin io.Reader) (string, error) {
 		return "", fmt.Errorf("input is empty")
 	}
 	return value, nil
+}
+
+func readRequestFile(path string, stdin io.Reader) (*entryinput.JSONRequest, error) {
+	data, err := readUtteranceFile(path, stdin)
+	if err != nil {
+		return nil, err
+	}
+	var request *entryinput.JSONRequest
+	if err := json.Unmarshal([]byte(data), &request); err != nil {
+		return nil, err
+	}
+	if request == nil {
+		return nil, fmt.Errorf("request must be a JSON object")
+	}
+	return request, nil
 }

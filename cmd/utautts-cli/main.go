@@ -45,6 +45,7 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 		text                     string
 		textFile                 string
 		readingFile              string
+		requestFile              string
 		tone                     string
 		color                    string
 		outPath                  string
@@ -110,6 +111,7 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	flag.StringVar(&text, "text", "", "text to synthesize")
 	flag.StringVar(&textFile, "text-file", "", "UTF-8 text file (- reads standard input; exclusive with --text)")
 	flag.StringVar(&readingFile, "reading-file", "", "UTF-8 pronunciation file (- reads standard input; exclusive with --reading/--kana)")
+	flag.StringVar(&requestFile, "request", "", "synthesis request JSON file (- reads standard input; exclusive with utterance flags)")
 	flag.StringVar(&language, "language", "ja", "language: ja, en, or zh")
 	flag.StringVar(&phonemizer, "phonemizer", "", "phonemizer ID (default: selected by language)")
 	flag.StringVar(&tone, "tone", "C4", "voicebank tone used with prefix.map")
@@ -207,6 +209,17 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 			readingSpecified = true
 		}
 	})
+	if requestFile != "" {
+		var conflict string
+		flag.Visit(func(option *flagpkg.Flag) {
+			if !requestTransportFlags[option.Name] && conflict == "" {
+				conflict = option.Name
+			}
+		})
+		if conflict != "" {
+			return cliFailure("invalid_arguments", fmt.Errorf("--request cannot be combined with --%s; put utterance settings in JSON", conflict))
+		}
+	}
 	if textFile != "" && textSpecified || readingFile != "" && readingSpecified {
 		return cliFailure("invalid_arguments", errors.New("--text-file conflicts with --text; --reading-file conflicts with --reading/--kana"))
 	}
@@ -233,11 +246,23 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 			return cliFailure("input_error", fmt.Errorf("read pronunciation input: %w", err))
 		}
 	}
+	var jsonRequest *entryinput.JSONRequest
+	if requestFile != "" {
+		var err error
+		jsonRequest, err = readRequestFile(requestFile, stdin)
+		if err != nil {
+			return cliFailure("input_error", fmt.Errorf("read request JSON: %w", err))
+		}
+		if jsonRequest.VoicebankID != "" {
+			return cliFailure("invalid_arguments", errors.New("CLI request cannot select voicebank_id; use --voicebank"))
+		}
+		text, reading = jsonRequest.Text, jsonRequest.ReadingOrKana()
+	}
 	if reading == "" && text == "" {
 		if !jsonOutput {
 			flag.Usage()
 		}
-		return cliFailure("invalid_arguments", errors.New("either --text, --reading, --text-file or --reading-file is required"))
+		return cliFailure("invalid_arguments", errors.New("either --text, --reading, --text-file, --reading-file or --request is required"))
 	}
 	runtime, err := synth.NewRuntime(synth.RuntimeConfig{
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
@@ -257,63 +282,72 @@ func runCLI(args []string, stdin io.Reader, stdout, stderr io.Writer) (runErr er
 	defer release()
 	resolver := runtime.Service
 
-	pitchFactors, err := loadPitchFactors(pitchContourPath, pitchContourCase)
-	if err != nil {
-		return cliFailure("input_error", err)
+	var synthesisRequest synth.Request
+	if jsonRequest == nil {
+		pitchFactors, err := loadPitchFactors(pitchContourPath, pitchContourCase)
+		if err != nil {
+			return cliFailure("input_error", err)
+		}
+		prosodyFeatures, err := loadProsodyFeatures(prosodyFeaturesPath, prosodyFeaturesCase, text, reading)
+		if err != nil {
+			return cliFailure("input_error", err)
+		}
+		dictionary, err := loadDictionary(dictionaryPath)
+		if err != nil {
+			return cliFailure("input_error", err)
+		}
+		moraDurations, err := loadMoraDurations(moraDurationsPath)
+		if err != nil {
+			return cliFailure("input_error", err)
+		}
+		resamplerExpressions, err := loadResamplerExpressions(resamplerExpressionsPath)
+		if err != nil {
+			return cliFailure("input_error", err)
+		}
+		request := utautts.Request{
+			Text: text, Reading: reading, Language: language, Phonemizer: phonemizer,
+			Tone: tone, Color: color, ModelID: prosodyPath, Dictionary: dictionary,
+			Options: utautts.Options{
+				MoraDurationMS: &moraMS, PauseDurationMS: &pauseMS, ReleaseMS: &releaseMS,
+				IntonationStrength: &intonationStrength, ApplyPitch: &applyPitch,
+				ContextDuration: &contextDuration, BoundaryTone: &boundaryTone,
+				StretchAdapt: &stretchAdapt, PauseContext: &pauseContext, EnglishWeakForm: &englishWeakForm,
+			},
+		}
+		// 配置、詳細編集、評価用入力は通常の発話要求に含めない。
+		synthesisRequest = entryinput.Apply(request, synth.Request{
+			VoicebankPath:           voicebankPath,
+			Resampler:               resampler,
+			Wavtool:                 wavtool,
+			MoraDurationsMS:         moraDurations,
+			LeadingPreutteranceMS:   leadingPreutteranceMS,
+			ManualPitchPath:         manualPitchPath,
+			ProsodyFeatures:         prosodyFeatures,
+			ProsodyPitchOnly:        prosodyPitchOnly,
+			PitchFactors:            pitchFactors,
+			ContextDurationStrength: contextDurationStrength,
+			BoundaryToneStrength:    boundaryToneStrength,
+			StretchAdaptStrength:    stretchAdaptStrength,
+			PauseContextStrength:    pauseContextStrength,
+			CVVCTiming:              cvvcTiming,
+			CVVCTransitionGain:      cvvcTransitionGain,
+			CVVCPreBoundaryFade:     cvvcPreBoundaryFade,
+			AliasPolicy:             voicebank.AliasPolicy(aliasPolicy),
+			Worldline:               render.WorldlineProviderOptions{TimingWarp: &timingWarp, Microprosody: &microprosody},
+			JoinModelPath:           joinModelPath,
+			DiffSingerSteps:         diffSingerSteps,
+			DiffSingerDurationMix:   diffSingerDurationMix,
+			DiffSingerPitchMix:      diffSingerPitchMix,
+			DiffSingerExpr:          diffSingerExpr,
+			ResamplerExpressions:    resamplerExpressions,
+		})
+	} else {
+		synthesisRequest = jsonRequest.InternalRequest()
+		synthesisRequest.VoicebankPath = voicebankPath
+		// CLI-only timing controls are not fields in the shared wire format.
+		synthesisRequest.CVVCTiming = cvvcTiming
+		synthesisRequest.CVVCTransitionGain = cvvcTransitionGain
 	}
-	prosodyFeatures, err := loadProsodyFeatures(prosodyFeaturesPath, prosodyFeaturesCase, text, reading)
-	if err != nil {
-		return cliFailure("input_error", err)
-	}
-	dictionary, err := loadDictionary(dictionaryPath)
-	if err != nil {
-		return cliFailure("input_error", err)
-	}
-	moraDurations, err := loadMoraDurations(moraDurationsPath)
-	if err != nil {
-		return cliFailure("input_error", err)
-	}
-	resamplerExpressions, err := loadResamplerExpressions(resamplerExpressionsPath)
-	if err != nil {
-		return cliFailure("input_error", err)
-	}
-	request := utautts.Request{
-		Text: text, Reading: reading, Language: language, Phonemizer: phonemizer,
-		Tone: tone, Color: color, ModelID: prosodyPath, Dictionary: dictionary,
-		Options: utautts.Options{
-			MoraDurationMS: &moraMS, PauseDurationMS: &pauseMS, ReleaseMS: &releaseMS,
-			IntonationStrength: &intonationStrength, ApplyPitch: &applyPitch,
-			ContextDuration: &contextDuration, BoundaryTone: &boundaryTone,
-			StretchAdapt: &stretchAdapt, PauseContext: &pauseContext, EnglishWeakForm: &englishWeakForm,
-		},
-	}
-	// 配置、詳細編集、評価用入力は通常の発話要求に含めない。
-	synthesisRequest := entryinput.Apply(request, synth.Request{
-		VoicebankPath:           voicebankPath,
-		Resampler:               resampler,
-		Wavtool:                 wavtool,
-		MoraDurationsMS:         moraDurations,
-		LeadingPreutteranceMS:   leadingPreutteranceMS,
-		ManualPitchPath:         manualPitchPath,
-		ProsodyFeatures:         prosodyFeatures,
-		ProsodyPitchOnly:        prosodyPitchOnly,
-		PitchFactors:            pitchFactors,
-		ContextDurationStrength: contextDurationStrength,
-		BoundaryToneStrength:    boundaryToneStrength,
-		StretchAdaptStrength:    stretchAdaptStrength,
-		PauseContextStrength:    pauseContextStrength,
-		CVVCTiming:              cvvcTiming,
-		CVVCTransitionGain:      cvvcTransitionGain,
-		CVVCPreBoundaryFade:     cvvcPreBoundaryFade,
-		AliasPolicy:             voicebank.AliasPolicy(aliasPolicy),
-		Worldline:               render.WorldlineProviderOptions{TimingWarp: &timingWarp, Microprosody: &microprosody},
-		JoinModelPath:           joinModelPath,
-		DiffSingerSteps:         diffSingerSteps,
-		DiffSingerDurationMix:   diffSingerDurationMix,
-		DiffSingerPitchMix:      diffSingerPitchMix,
-		DiffSingerExpr:          diffSingerExpr,
-		ResamplerExpressions:    resamplerExpressions,
-	})
 	resolvedSynthesis, err := resolver.ResolveSynthesis(synthesisRequest)
 	if err != nil {
 		return cliFailure("invalid_arguments", err)

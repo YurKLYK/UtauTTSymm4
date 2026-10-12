@@ -1,24 +1,12 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 )
-
-func (request *SynthesisRequest) UnmarshalJSON(data []byte) error {
-	decoded := synthesisRequestAlias(defaultSynthesisRequest())
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&decoded); err != nil {
-		return err
-	}
-	*request = SynthesisRequest(decoded)
-	return nil
-}
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

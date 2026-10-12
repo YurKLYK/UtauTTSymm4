@@ -496,7 +496,7 @@ func (s *Server) synthesize(ctx context.Context, request SynthesisRequest) (*syn
 	if len(request.ResamplerExpressions) > maxTextRunes {
 		return nil, http.StatusRequestEntityTooLarge, fmt.Errorf("resampler_expressions contains too many values")
 	}
-	result, err := s.synthesisService().SynthesizeContext(ctx, request.synthRequest())
+	result, err := s.synthesisService().SynthesizeContext(ctx, request.InternalRequest())
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return nil, http.StatusRequestTimeout, err
@@ -510,10 +510,7 @@ func (s *Server) synthesize(ctx context.Context, request SynthesisRequest) (*syn
 }
 
 func synthesisReading(request SynthesisRequest) string {
-	if request.Reading != "" {
-		return request.Reading
-	}
-	return request.Kana
+	return request.ReadingOrKana()
 }
 
 func contextErrorStatus(err error, fallback int) int {

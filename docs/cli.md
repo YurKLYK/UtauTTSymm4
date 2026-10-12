@@ -63,6 +63,31 @@ printf '%s\n' 'こんにちは。' | utautts-cli --voicebank "voice/足立レイ
 
 `--text-file`と`--text`、`--reading-file`と`--reading`／`--kana`は併用できません。文章と読みを両方渡す場合は従来どおり読みを優先します。標準入力を文章と読みの両方へ割り当てることはできません。
 
+## JSON要求から合成する
+
+`--request <path>`でUTF-8のJSON要求を読み込みます。`--request -`は標準入力を使います。入力は1個のJSONオブジェクトで、BOM・入力サイズの扱いは文章ファイルと同じです。
+
+```json
+{
+  "text": "こんにちは。",
+  "renderer": "utautts-world-phrase",
+  "model_id": "frame-intonation-tcn-v12",
+  "mora_duration_ms": 120,
+  "apply_pitch": true,
+  "renderer_settings": {"timing_warp": true}
+}
+```
+
+```sh
+utautts-cli --voicebank "voice/足立レイver3.5.0" --request request.json --out speech.wav --json
+```
+
+要求の項目・既定値・設定の優先順は[HTTP APIの合成要求](server.md#リクエスト項目)と共通です。通常の発話設定は直下に置き、方式固有の設定は`renderer_settings`へ渡します。`kana`などの互換項目や、モーラ長・手動ピッチなどの編集入力も受け取れます。CLIでは`voicebank_id`を使わず、音源のパスを`--voicebank`へ指定してください。
+
+JSON要求と発話フラグ（`--text`・`--reading`・`--renderer`・`--prosody`・`--mora-ms`など）は併用できません。配置の指定、`--out`・`--plan-out`・`--ustx-out`、付随ファイルの指定、`--json`は併用できます。評価用の特徴量や固定曲線など、JSON形式にないCLI専用入力は従来のフラグで使います。
+
+未知の要求項目や複数オブジェクトは入力エラーです。`renderer_settings`内の未知IDはRendererへ渡し、型不一致などは既存のHTTP入力と同じ診断規則で扱います。休止のゼロは既定値扱い、リリースの明示ゼロには`release_set: true`を使う互換規則も共通です。
+
 ## オプション
 
 
@@ -75,6 +100,7 @@ printf '%s\n' 'こんにちは。' | utautts-cli --voicebank "voice/足立レイ
 | `--text-file <path>` | | UTF-8の文章ファイル。`-`で標準入力 |
 | `--reading <読み>` | | かな、ARPAbet、またはPinyinを直接指定 |
 | `--reading-file <path>` | | UTF-8の読みファイル。`-`で標準入力 |
+| `--request <path>` | | HTTPと共通形式のJSON要求。`-`で標準入力。発話フラグとは併用不可 |
 | `--kana <読み>` | | `--reading`と同じ入力を受け付ける互換用の別名 |
 | `--language <id>` | `ja` | 言語。`ja`、`en`、`zh` |
 | `--phonemizer <id>` | 言語から自動選択 | phonemizer。`ja-kana`、`en-arpasing`、`en-delta`、`en-vccv`、`en-cv`、`zh-cvvc` |
