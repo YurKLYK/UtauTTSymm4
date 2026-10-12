@@ -3,7 +3,7 @@ package voicebank
 import (
 	"testing"
 
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestSuggestedLanguage(t *testing.T) {

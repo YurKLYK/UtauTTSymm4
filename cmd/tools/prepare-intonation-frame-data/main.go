@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 )
 
 func activeBounds(samples []int16, rate int) (float64, float64, error) {

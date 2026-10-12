@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/text/encoding/japanese"
 
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestLoadCharacterNameAndPrefixMap(t *testing.T) {

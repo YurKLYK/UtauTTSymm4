@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"utautts/internal/connection"
-	"utautts/internal/oto"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 const maximumJoinGapMS = 80.0

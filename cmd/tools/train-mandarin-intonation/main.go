@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 	"math"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	"utautts/cmd/tools/internal/toolutil"
 )
 
 var knots = []float64{.25, .40, .55, .70, .85}

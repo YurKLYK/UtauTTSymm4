@@ -3,9 +3,9 @@ package tts
 import (
 	"math"
 
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // capabilityは解決済みRendererのもの（ApplyResolvedEngine）だけを見る。未解決は機能なしとして扱う。

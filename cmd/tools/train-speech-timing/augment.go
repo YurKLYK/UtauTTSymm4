@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"utautts/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 )
 
 // planAugmentは自然時間の発話から、合成時と同じ一定のモーラ長（120ms±15、休止180ms）に並べ直した

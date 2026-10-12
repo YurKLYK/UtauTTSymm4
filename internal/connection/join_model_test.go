@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/acoustic"
+	"github.com/yh2237/UtauTTS/internal/acoustic"
 )
 
 func validFrame() acoustic.Frame {

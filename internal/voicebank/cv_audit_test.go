@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestAuditSingleCVReportsSourceTiming(t *testing.T) {

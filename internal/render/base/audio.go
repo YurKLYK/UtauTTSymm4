@@ -7,8 +7,8 @@ import (
 	"math"
 	"sync"
 
-	"utautts/internal/audio"
-	"utautts/internal/sourceaudio"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/sourceaudio"
 )
 
 type SourceCache struct {

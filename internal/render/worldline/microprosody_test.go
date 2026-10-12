@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestApplyMicroprosodyRaisesF0AfterVoicelessStop(t *testing.T) {

@@ -2,14 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/tts"
 	"math"
 	"os"
 	"path/filepath"
 	"testing"
-	"utautts/internal/audio"
-	"utautts/internal/render"
-	"utautts/internal/synth"
-	"utautts/internal/tts"
 )
 
 func TestPitchTraceUsesAudioMarginAndMeasuresKnownTone(t *testing.T) {

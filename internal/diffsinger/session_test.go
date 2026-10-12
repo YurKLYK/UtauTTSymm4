@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 func runDiffSingerProviderHelper() {

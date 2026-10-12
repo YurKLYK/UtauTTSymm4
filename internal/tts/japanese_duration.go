@@ -3,10 +3,10 @@ package tts
 import (
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
-	"utautts/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/settings"
 )
 
 // 読み上げ向けに、文脈による伸縮を控えめにする。

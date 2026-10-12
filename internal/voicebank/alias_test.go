@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestClassifyAlias(t *testing.T) {

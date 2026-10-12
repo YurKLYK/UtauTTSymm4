@@ -3,7 +3,7 @@ package worldrender
 import (
 	"math"
 
-	"utautts/internal/speechwindow"
+	"github.com/yh2237/UtauTTS/internal/speechwindow"
 )
 
 type protectedStopSource struct {

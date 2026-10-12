@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"utautts/cmd/tools/internal/sourcephone"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/sourcephone"
 )
 
 func run(args []string) error {

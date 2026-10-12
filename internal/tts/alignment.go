@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 func alignRuntimeProsodyFeatures(morae []frontend.Mora, analysis *openjtalk.Analysis) ([]prosody.FeatureFrame, error) {

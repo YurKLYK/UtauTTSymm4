@@ -3,7 +3,7 @@ package openjtalk
 import (
 	"strings"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 var mfaConsonants = map[string]string{"k": "k", "g": "ɡ", "s": "s", "sh": "ɕ", "z": "z", "j": "dʑ", "t": "t", "ch": "tɕ", "ts": "ts", "d": "d", "n": "n", "h": "h", "f": "ɸ", "b": "b", "p": "p", "m": "m", "y": "j", "r": "ɾ", "w": "w", "v": "v", "dy": "dʲ", "ty": "tʲ", "ky": "c", "gy": "ɟ", "ny": "ɲ", "hy": "ç", "my": "mʲ", "ry": "ɾʲ", "by": "bʲ", "py": "pʲ"}

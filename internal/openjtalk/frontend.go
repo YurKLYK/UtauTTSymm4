@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 type Config struct {

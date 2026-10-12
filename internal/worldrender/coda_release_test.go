@@ -1,9 +1,9 @@
 package worldrender
 
 import (
+	"github.com/yh2237/UtauTTS/internal/provider"
 	"math"
 	"testing"
-	"utautts/internal/provider"
 )
 
 func TestCodaReleaseReachesBurstBeforeAudibleEnd(t *testing.T) {

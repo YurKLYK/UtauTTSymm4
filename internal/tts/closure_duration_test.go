@@ -3,8 +3,8 @@ package tts
 import (
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestPreviewClosureUsesNormalMoraDuration(t *testing.T) {

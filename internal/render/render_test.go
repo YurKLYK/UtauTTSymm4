@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/pitch"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/pitch"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestRenderHonorsCanceledContext(t *testing.T) {

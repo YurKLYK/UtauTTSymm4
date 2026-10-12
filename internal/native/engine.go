@@ -7,13 +7,13 @@ import (
 	goruntime "runtime"
 	"sort"
 
-	"utautts/internal/appinfo"
-	"utautts/internal/frontend"
-	"utautts/internal/openutau"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
-	"utautts/internal/synth"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/appinfo"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 type Config struct {

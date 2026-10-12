@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
-	"utautts/internal/processutil"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/processutil"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 type result struct {

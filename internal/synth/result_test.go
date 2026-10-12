@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 func TestResultAndExportContainSharedArtifacts(t *testing.T) {

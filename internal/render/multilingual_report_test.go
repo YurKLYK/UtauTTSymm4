@@ -1,8 +1,8 @@
 package render
 
 import (
+	"github.com/yh2237/UtauTTS/internal/plan"
 	"testing"
-	"utautts/internal/plan"
 )
 
 func TestSpeechAnchorsSurviveRenderReportWithoutSharing(t *testing.T) {

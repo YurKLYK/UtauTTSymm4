@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 type synthesizeRequest struct {

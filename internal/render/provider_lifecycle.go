@@ -3,7 +3,7 @@ package render
 import (
 	"errors"
 
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 // CloseProviderSessionsはアプリ終了時に常駐する外部Providerプロセスを解放する。

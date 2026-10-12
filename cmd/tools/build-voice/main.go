@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"
-	"utautts/cmd/tools/internal/toolutil"
 )
 
 func decodedName(f *zip.File) string {

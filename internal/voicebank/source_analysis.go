@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/yh2237/UtauTTS/internal/acoustic"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/sourceaudio"
 	"math"
-	"utautts/internal/acoustic"
-	"utautts/internal/oto"
-	"utautts/internal/sourceaudio"
 )
 
 // 音響観測だけを持ち、音素名は推定しない。

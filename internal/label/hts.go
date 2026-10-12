@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 const htkTicksPerMillisecond = 10000.0

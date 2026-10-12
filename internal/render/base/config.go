@@ -3,8 +3,8 @@ package base
 import (
 	"context"
 
-	"utautts/internal/engine"
-	"utautts/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/settings"
 )
 
 type Config struct {

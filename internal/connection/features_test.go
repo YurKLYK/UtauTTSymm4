@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/acoustic"
-	"utautts/internal/audio"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/acoustic"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestSpeechTailUsesActivityWithinOtoTrim(t *testing.T) {

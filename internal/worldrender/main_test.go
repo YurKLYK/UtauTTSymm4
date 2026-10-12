@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 func TestDecodeProviderJobUsesTypedWorldlineOptions(t *testing.T) {

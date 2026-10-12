@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"sync"
 
-	"utautts/internal/lifecycle"
-	"utautts/internal/processutil"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/processutil"
 )
 
 type frontendHelperProcess struct {

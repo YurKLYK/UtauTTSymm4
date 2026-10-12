@@ -6,7 +6,7 @@ import (
 	"math"
 	"os"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 const ManualPitchVersion = 1

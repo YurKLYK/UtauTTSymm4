@@ -14,9 +14,9 @@ import (
 	"sync"
 
 	"github.com/parquet-go/parquet-go"
-	"utautts/cmd/tools/internal/aishell3"
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/aishell3"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 type syllable struct {

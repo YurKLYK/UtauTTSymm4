@@ -1,15 +1,15 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"math"
 	"path/filepath"
 	"reflect"
 	"testing"
-	"utautts/internal/audio"
-	"utautts/internal/oto"
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
-	"utautts/internal/voicebank"
 )
 
 func TestExperimentalSpanExcludesFollowingVowelAndKeepsBurst(t *testing.T) {

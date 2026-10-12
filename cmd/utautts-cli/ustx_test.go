@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"utautts/internal/plan"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 func TestUstxProjectFromSynthesisCarriesPlanTiming(t *testing.T) {

@@ -9,14 +9,14 @@ import (
 	"sort"
 	"sync"
 
-	"utautts/internal/frontend"
-	"utautts/internal/lifecycle"
-	"utautts/internal/neural"
-	"utautts/internal/openjtalk"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/neural"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 // GUIの反復合成で変わらない高コストな入力をプロセス内に保持する。

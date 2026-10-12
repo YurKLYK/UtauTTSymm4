@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 // PhoneTimingは合成目標であり音響解析の結果ではない。

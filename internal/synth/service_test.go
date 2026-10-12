@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/engine"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 func boolPointer(value bool) *bool { return &value }

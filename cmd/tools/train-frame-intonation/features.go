@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 )
 
 type token struct {

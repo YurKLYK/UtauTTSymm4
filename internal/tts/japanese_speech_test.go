@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 func japaneseSpeechTestPredictions(count int) []prosody.Prediction {

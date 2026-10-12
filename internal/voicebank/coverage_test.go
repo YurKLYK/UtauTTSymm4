@@ -2,9 +2,9 @@ package voicebank
 
 import (
 	"errors"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
 )
 
 func TestCoverageContinuesWithContextAndPreservesStrictFailure(t *testing.T) {

@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 func unifiedProsodyFixture(t testing.TB) (*prosody.Model, []frontend.Mora, []prosody.FeatureFrame, *plan.Plan) {

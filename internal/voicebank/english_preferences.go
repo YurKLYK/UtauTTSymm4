@@ -3,7 +3,7 @@ package voicebank
 import (
 	"strings"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 // 英語では子音文脈を持つCVVC候補を優先する

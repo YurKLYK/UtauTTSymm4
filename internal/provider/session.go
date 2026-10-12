@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"utautts/internal/processutil"
+	"github.com/yh2237/UtauTTS/internal/processutil"
 )
 
 const (

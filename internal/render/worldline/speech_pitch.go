@@ -1,8 +1,8 @@
 package worldline
 
 import (
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 // 主母音の音高を基準にし VCや語末子音による輪郭の重複を防ぐ。

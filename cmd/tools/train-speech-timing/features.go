@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 type utterance struct {

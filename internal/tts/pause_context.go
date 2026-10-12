@@ -1,6 +1,6 @@
 package tts
 
-import "utautts/internal/settings"
+import "github.com/yh2237/UtauTTS/internal/settings"
 
 func pauseContextEnabled(cfg Config) bool {
 	if cfg.PauseContext == nil {

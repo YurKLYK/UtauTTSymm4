@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"utautts/internal/updatelock"
+	"github.com/yh2237/UtauTTS/internal/updatelock"
 )
 
 func relaunchElevatedIfNeeded(target string, args []string) (bool, error) {

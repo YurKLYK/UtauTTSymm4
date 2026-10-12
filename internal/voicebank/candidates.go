@@ -3,8 +3,8 @@ package voicebank
 import (
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func (c candidateContext) positionCandidates(position int, mora frontend.Mora, previousVowel string, phraseStart bool, previousLayer []Selection) ([]Selection, *MissingAliasError) {

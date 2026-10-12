@@ -3,7 +3,7 @@ package base
 import (
 	"strings"
 
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func SpeechStop(p *plan.Plan, unit plan.Unit) bool {

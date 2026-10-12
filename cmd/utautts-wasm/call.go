@@ -7,7 +7,7 @@ import (
 	"sync"
 	"syscall/js"
 
-	"utautts/internal/native"
+	"github.com/yh2237/UtauTTS/internal/native"
 )
 
 var (

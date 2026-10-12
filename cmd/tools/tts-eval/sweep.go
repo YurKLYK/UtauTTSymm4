@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/atomicfile"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/atomicfile"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 const defaultPresets = "default,timing,no-pitch"

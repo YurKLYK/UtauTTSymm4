@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 	"github.com/yh2237/gograd/tensor"
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
 )
 
 func TestExportLoadsAndPredicts(t *testing.T) {

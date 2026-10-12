@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/yh2237/UtauTTS/internal/render"
 	"os"
 	"path/filepath"
 	"testing"
-	"utautts/internal/render"
 )
 
 func TestValidatePrompts(t *testing.T) {

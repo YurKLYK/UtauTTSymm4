@@ -3,7 +3,7 @@ package worldrender
 import (
 	"math"
 
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 type worldSpeechMap struct {

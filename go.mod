@@ -1,4 +1,4 @@
-module utautts
+module github.com/yh2237/UtauTTS
 
 go 1.27.0
 

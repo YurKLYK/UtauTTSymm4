@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"utautts/cmd/tools/internal/sourcephone"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/sourcephone"
 )
 
 type paths []string

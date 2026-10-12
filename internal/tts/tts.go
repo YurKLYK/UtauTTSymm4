@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/audio"
-	"utautts/internal/connection"
-	"utautts/internal/engine"
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 // nilなら計測ログを出さない。

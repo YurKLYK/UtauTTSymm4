@@ -5,7 +5,7 @@ import (
 
 	presampfile "github.com/yh2237/utauio/presamp"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 type Presamp struct {

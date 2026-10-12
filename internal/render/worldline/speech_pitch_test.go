@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestSpeechPitchReferenceExcludesTransitionsAndPreservesControls(t *testing.T) {

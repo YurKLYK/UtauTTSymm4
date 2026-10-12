@@ -2,13 +2,13 @@ package worldline
 
 import (
 	"fmt"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/speechwindow"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"math"
-	"utautts/internal/oto"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
-	"utautts/internal/speechwindow"
-	"utautts/internal/voicebank"
 )
 
 // 音素区間を検証し、時間写像と過渡音保護を確定する。

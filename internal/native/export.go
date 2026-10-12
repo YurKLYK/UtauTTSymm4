@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"utautts/internal/aviutl"
-	"utautts/internal/openutau"
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/aviutl"
+	"github.com/yh2237/UtauTTS/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 func (e *Engine) writeSidecars(data []byte) (any, error) {

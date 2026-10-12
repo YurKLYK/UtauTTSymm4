@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/internal/acoustic"
-	"utautts/internal/audio"
-	"utautts/internal/oto"
-	"utautts/internal/sourceaudio"
+	"github.com/yh2237/UtauTTS/internal/acoustic"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/sourceaudio"
 )
 
 type EntryValidation struct {

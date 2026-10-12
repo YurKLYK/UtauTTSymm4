@@ -1,9 +1,9 @@
 package render
 
 import (
+	"github.com/yh2237/UtauTTS/internal/plan"
 	"math"
 	"testing"
-	"utautts/internal/plan"
 )
 
 func TestCodaOverlapReservesAudibleTail(t *testing.T) {

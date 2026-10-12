@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/audio"
-	"utautts/internal/engine"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
-	"utautts/internal/speechtiming"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/speechtiming"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 // nilなら計測ログを出さない。

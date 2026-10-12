@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 	"github.com/yh2237/gograd/autograd"
 	"github.com/yh2237/gograd/tensor"
-	"utautts/cmd/tools/internal/toolutil"
 )
 
 const trainingFormat = "utautts-train-speech-timing-1"

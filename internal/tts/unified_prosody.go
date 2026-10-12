@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/settings"
-	"utautts/internal/speechtiming"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/speechtiming"
 )
 
 // unifiedF0Headは選んだ抑揚モデルが持つ統合韻律モデル（F0ヘッド）。持たなければnil。

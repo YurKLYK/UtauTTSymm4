@@ -8,8 +8,8 @@ import (
 	"os"
 	"syscall/js"
 
-	"utautts/internal/render/worldline"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/render/worldline"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 // versionはJS側との互換判定に使う公開APIのバージョン。

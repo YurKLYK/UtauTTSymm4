@@ -5,8 +5,8 @@ import (
 
 	"github.com/yh2237/audiodsp/spectrum"
 
-	"utautts/internal/audio"
-	"utautts/internal/pitch"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/pitch"
 )
 
 type Frame struct {

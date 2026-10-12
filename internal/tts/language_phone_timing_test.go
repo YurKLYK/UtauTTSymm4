@@ -3,7 +3,7 @@ package tts
 import (
 	"testing"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func TestEnglishPhoneTimingPreservesFinalStop(t *testing.T) {

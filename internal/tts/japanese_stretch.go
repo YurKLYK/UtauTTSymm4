@@ -1,6 +1,6 @@
 package tts
 
-import "utautts/internal/settings"
+import "github.com/yh2237/UtauTTS/internal/settings"
 
 // 短いモーラでは伸縮上限に届かず、WAV解析のコストだけが増えるため補正しない。
 const stretchAdaptMinMoraMS = 200.0

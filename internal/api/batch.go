@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/internal/audio"
-	"utautts/internal/sidecar"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/sidecar"
 )
 
 func (s *Server) handleSynthesizeBatch(w http.ResponseWriter, r *http.Request) {

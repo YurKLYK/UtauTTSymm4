@@ -3,9 +3,9 @@ package tts
 import (
 	"fmt"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 type japaneseProfile struct{}

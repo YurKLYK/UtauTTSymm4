@@ -1,6 +1,6 @@
 package voicebank
 
-import "utautts/internal/frontend"
+import "github.com/yh2237/UtauTTS/internal/frontend"
 
 // 主原音の網羅性だけを数える。発音品質や遷移・語尾は評価しない。
 type Coverage struct {

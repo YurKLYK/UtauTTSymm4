@@ -1,12 +1,12 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/oto"
 	"math"
 	"math/rand"
 	"path/filepath"
 	"testing"
-	"utautts/internal/audio"
-	"utautts/internal/oto"
 )
 
 func TestSourceObservationSeparatesPeriodicNoiseAndSilence(t *testing.T) {

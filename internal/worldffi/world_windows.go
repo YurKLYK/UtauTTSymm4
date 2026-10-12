@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 type worldShape struct {

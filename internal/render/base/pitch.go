@@ -7,9 +7,9 @@ import (
 	"sort"
 	"sync"
 
-	"utautts/internal/audio"
-	"utautts/internal/pitch"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/pitch"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 // F0AtTimeは時刻に対応する目標F0を返す。原音ピッチへ係数を掛け、境界の間は対数線形でつなぐ。

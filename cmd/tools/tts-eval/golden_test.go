@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 // 原音選択・時間配分を意図的に変えた場合だけ更新する。

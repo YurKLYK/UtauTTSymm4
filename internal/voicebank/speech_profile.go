@@ -1,13 +1,13 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/acoustic"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/pitch"
+	"github.com/yh2237/UtauTTS/internal/sourceaudio"
 	"math"
 	"os"
 	"sort"
-	"utautts/internal/acoustic"
-	"utautts/internal/oto"
-	"utautts/internal/pitch"
-	"utautts/internal/sourceaudio"
 )
 
 type SpeechProfile struct {

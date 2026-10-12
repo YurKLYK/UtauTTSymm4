@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/plan"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func stretchAdaptUnit() plan.Unit {

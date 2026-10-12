@@ -1,9 +1,9 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
 )
 
 func TestMandarinDiphthongGetsItsOwnTargetInterval(t *testing.T) {

@@ -1,14 +1,14 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 	"math"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
 )
 
 func TestSpeechProfileBoundedAndInvalidated(t *testing.T) {

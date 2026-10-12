@@ -11,7 +11,7 @@ import (
 	"github.com/ikawaha/kagome-dict/ipa"
 	"github.com/ikawaha/kagome/v2/tokenizer"
 
-	"utautts/internal/frontend/ipapron"
+	"github.com/yh2237/UtauTTS/internal/frontend/ipapron"
 )
 
 var (

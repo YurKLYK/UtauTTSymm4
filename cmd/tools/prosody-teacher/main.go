@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 type token struct {

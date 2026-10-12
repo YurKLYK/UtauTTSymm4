@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 const (

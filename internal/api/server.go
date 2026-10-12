@@ -15,13 +15,13 @@ import (
 	"strings"
 	"sync"
 
-	"utautts/internal/audio"
-	"utautts/internal/diffsinger"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
-	"utautts/internal/synth"
-	"utautts/internal/tts"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 //go:embed ui/index.html

@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestMain(m *testing.M) {

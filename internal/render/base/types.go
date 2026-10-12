@@ -3,7 +3,7 @@ package base
 import (
 	"math"
 
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 // PitchCurveはフレームごとのセント単位の音高カーブ。

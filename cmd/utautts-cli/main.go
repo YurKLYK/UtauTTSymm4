@@ -12,13 +12,13 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"utautts/internal/appinfo"
-	"utautts/internal/openutau"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/sidecar"
-	"utautts/internal/synth"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/appinfo"
+	"github.com/yh2237/UtauTTS/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/sidecar"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func main() {

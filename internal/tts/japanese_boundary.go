@@ -3,10 +3,10 @@ package tts
 import (
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/settings"
 )
 
 const (

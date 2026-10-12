@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 func TestWorldMixIsOrderIndependentAndPreservesFade(t *testing.T) {

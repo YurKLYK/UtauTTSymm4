@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/connection"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 func TestMissingEndingDoesNotDropRemainingConsonants(t *testing.T) {

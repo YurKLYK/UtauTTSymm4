@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 // 列順: string, pos, pos_group1, ctype, cform, orig, read, pron, acc, mora_size, chain_rule, chain_flag

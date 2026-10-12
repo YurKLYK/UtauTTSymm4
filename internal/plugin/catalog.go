@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/internal/prosody"
-	"utautts/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/settings"
 )
 
 const ManifestVersion = 2

@@ -3,9 +3,9 @@ package worldline
 import (
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 // 必須の語末子音は音源のエイリアスではなく発音解析結果で判定する。

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"utautts/internal/updatelock"
+	"github.com/yh2237/UtauTTS/internal/updatelock"
 )
 
 func TestUpdateBlockedWithoutLock(t *testing.T) {

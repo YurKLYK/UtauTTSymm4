@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func validateMoraPitchResidual(model *MoraPitchResidualModel, limits *ResidualLimits) error {

@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 )
 
 type phrase struct {

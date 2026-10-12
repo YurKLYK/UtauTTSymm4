@@ -12,7 +12,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"utautts/internal/native"
+	"github.com/yh2237/UtauTTS/internal/native"
 )
 
 type response struct {

@@ -10,14 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func TestMoraTimings(t *testing.T) {

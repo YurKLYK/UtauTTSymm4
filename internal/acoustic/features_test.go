@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func TestAnalyzeFrameFindsPitchAndNormalizesSpectrum(t *testing.T) {

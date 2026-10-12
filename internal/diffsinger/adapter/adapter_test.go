@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/diffsinger"
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 func TestDiffSingerPhones(t *testing.T) {

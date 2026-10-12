@@ -1,8 +1,8 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/connection"
 	"math"
-	"utautts/internal/connection"
 )
 
 func contiguousCodas(left, right Selection) bool {

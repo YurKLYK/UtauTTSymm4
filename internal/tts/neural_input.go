@@ -3,10 +3,10 @@ package tts
 import (
 	"fmt"
 
-	"utautts/internal/frontend"
-	"utautts/internal/neural"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/neural"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // 発音と韻律はtts側で解決し、実装側にはスコア構築とブリッジ呼び出しを委ねる。

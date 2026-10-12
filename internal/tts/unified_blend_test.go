@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 func TestBlendPitchCurvesWeightsSecondCurve(t *testing.T) {

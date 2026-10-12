@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"utautts/internal/api"
-	"utautts/internal/appinfo"
+	"github.com/yh2237/UtauTTS/internal/api"
+	"github.com/yh2237/UtauTTS/internal/appinfo"
 )
 
 func isLoopbackHost(host string) bool {

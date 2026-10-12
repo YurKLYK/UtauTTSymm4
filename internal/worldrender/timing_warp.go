@@ -3,8 +3,8 @@ package worldrender
 import (
 	"fmt"
 
-	"utautts/internal/provider"
-	"utautts/internal/speechtiming"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/speechtiming"
 )
 
 type timingWarp struct {

@@ -4,9 +4,9 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func TestNormalizePlanTiming(t *testing.T) {

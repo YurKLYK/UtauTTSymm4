@@ -8,11 +8,11 @@ import (
 	"math"
 	"time"
 
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
-	"utautts/internal/synth"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 type caseOptions struct {

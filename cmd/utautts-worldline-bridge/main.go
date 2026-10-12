@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"utautts/internal/worldrender"
+	"github.com/yh2237/UtauTTS/internal/worldrender"
 )
 
 func main() {

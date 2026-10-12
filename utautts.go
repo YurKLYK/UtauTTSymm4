@@ -13,9 +13,9 @@ import (
 
 	"github.com/yh2237/audiodsp/wav"
 
-	"utautts/internal/lifecycle"
-	"utautts/internal/synth"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 var (

@@ -1,6 +1,6 @@
 package plan
 
-import "utautts/internal/frontend"
+import "github.com/yh2237/UtauTTS/internal/frontend"
 
 // 句読点の種類と発話末の位置に応じて休止長を調整する。
 const (

@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"utautts/cmd/tools/internal/aishell3"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/aishell3"
 )
 
 const sampleGrid = `File type = "ooTextFile"

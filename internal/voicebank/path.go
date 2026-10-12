@@ -3,9 +3,9 @@ package voicebank
 import (
 	"math"
 
-	"utautts/internal/connection"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 type pathState struct {

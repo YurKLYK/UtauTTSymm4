@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
 	"os"
 	"path/filepath"
 	"testing"
-	"utautts/internal/audio"
-	"utautts/internal/plan"
 )
 
 func TestSourceAuditKeepsContextSeparateFromObservedPhones(t *testing.T) {

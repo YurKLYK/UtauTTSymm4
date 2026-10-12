@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 type cachedWorldUnit struct {

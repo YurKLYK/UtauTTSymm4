@@ -5,12 +5,12 @@ import (
 	"errors"
 	"sync"
 
-	"utautts/internal/audio"
-	"utautts/internal/engine"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // providerはこの入力だけを参照し、tts.Configに依存しない。

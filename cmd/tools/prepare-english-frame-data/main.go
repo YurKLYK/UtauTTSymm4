@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 type manifestRow struct {

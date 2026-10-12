@@ -13,7 +13,7 @@ import (
 
 	"github.com/yh2237/audiodsp/wav"
 
-	"utautts"
+	"github.com/yh2237/UtauTTS"
 )
 
 func testConfig(t *testing.T) utautts.Config {

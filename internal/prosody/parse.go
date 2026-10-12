@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/speechtiming"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/speechtiming"
 )
 
 func LoadModel(path string) (*Model, error) {

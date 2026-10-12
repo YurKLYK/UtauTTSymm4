@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 )
 
 const phoneNames = "<pad> <unk> sil a i u e o N cl k g s sh z j t ch ts d n h f b p m y r w v ky gy ny hy my ry by py dy ty"

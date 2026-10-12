@@ -8,8 +8,8 @@ import (
 	"os"
 	"sync"
 
-	"utautts/internal/provider"
-	"utautts/internal/worldrender"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/worldrender"
 )
 
 var (

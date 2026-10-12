@@ -1,9 +1,9 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
 	"math"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
 )
 
 // 原音境界は規則による推定値で、音響的な整列結果ではない。

@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 	"github.com/yh2237/gograd/autograd"
 	"github.com/yh2237/gograd/tensor"
-	"utautts/cmd/tools/internal/toolutil"
 )
 
 type parityFixture struct {

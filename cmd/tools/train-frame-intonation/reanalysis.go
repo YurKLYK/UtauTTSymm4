@@ -5,8 +5,8 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/openjtalk"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 )
 
 // 再解析しても、コーパスの時刻と母音は保持する。

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/render/worldline"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/render/worldline"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 func TestEvaluationProfileRecordsCaseAndRestoresHooks(t *testing.T) {

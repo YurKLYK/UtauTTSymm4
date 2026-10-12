@@ -1,10 +1,10 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/voicebank"
 )
 
 func TestSpeechCodaProtectsStrongOnsetInsteadOfWeakTail(t *testing.T) {

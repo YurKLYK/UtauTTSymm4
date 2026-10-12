@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/atomicfile"
-	"utautts/internal/render"
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/atomicfile"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 type prompt struct {

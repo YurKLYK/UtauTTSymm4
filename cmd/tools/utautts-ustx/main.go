@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/openutau"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/plugin"
 )
 
 func TestResolverAcceptsManifestDeclaredExternalProvider(t *testing.T) {

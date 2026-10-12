@@ -3,10 +3,10 @@ package main
 import (
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/openutau"
-	"utautts/internal/plan"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 func ustxFrameCurves(cfg tts.Config, count int) []openutau.FrameCurve {

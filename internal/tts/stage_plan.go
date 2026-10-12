@@ -2,11 +2,11 @@ package tts
 
 import (
 	"fmt"
-	"utautts/internal/connection"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func buildSynthesisPlan(cfg Config, profile languageProfile, bank *voicebank.Bank, reading, language, phonemizer string, morae []frontend.Mora, selections []voicebank.Selection, predictions []prosody.Prediction, requestedAliasPolicy voicebank.AliasPolicy, joinModel *connection.JoinModel) (*plan.Plan, bool, error) {

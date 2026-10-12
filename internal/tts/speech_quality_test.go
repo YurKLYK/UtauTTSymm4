@@ -1,10 +1,10 @@
 package tts
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plugin"
 	"reflect"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/plugin"
 )
 
 func TestChineseSandhiUsesWordsAndCharacters(t *testing.T) {

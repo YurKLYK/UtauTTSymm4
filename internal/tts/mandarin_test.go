@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 func TestBundledMandarinModelIsUsedForJapaneseDefault(t *testing.T) {

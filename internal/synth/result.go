@@ -3,10 +3,10 @@ package synth
 import (
 	"fmt"
 
-	"utautts/internal/audio"
-	"utautts/internal/label"
-	"utautts/internal/sidecar"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/label"
+	"github.com/yh2237/UtauTTS/internal/sidecar"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 type Result struct {

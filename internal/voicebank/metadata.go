@@ -8,7 +8,7 @@ import (
 
 	"github.com/yh2237/utauio/prefixmap"
 
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 type Affix struct {

@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func median(x []float64) float64 {

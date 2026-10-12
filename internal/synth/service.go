@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"strings"
 
-	"utautts/internal/engine"
-	"utautts/internal/lifecycle"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	_ "utautts/internal/render/worldline" // 同梱の既定Rendererをinitで登録する。
-	"utautts/internal/settings"
-	"utautts/internal/tts"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	_ "github.com/yh2237/UtauTTS/internal/render/worldline" // 同梱の既定Rendererをinitで登録する。
+	"github.com/yh2237/UtauTTS/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 var ErrUnavailable = errors.New("unavailable")

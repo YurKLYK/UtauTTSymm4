@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/plugin"
-	"utautts/internal/synth"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func TestSynthesisWaitHonorsRequestCancellation(t *testing.T) {

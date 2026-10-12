@@ -1,9 +1,9 @@
 package tts
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
 )
 
 func TestEnglishPhoneCodaDurationAdjustment(t *testing.T) {

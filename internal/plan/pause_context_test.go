@@ -4,10 +4,10 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
-	"utautts/internal/prosody"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func pauseMorae(kind string, final bool) []frontend.Mora {

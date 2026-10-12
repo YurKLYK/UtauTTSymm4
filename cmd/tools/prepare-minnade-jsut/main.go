@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
-	"utautts/cmd/tools/internal/toolutil"
 )
 
 func findDir(root, part, suffix string) (string, error) {

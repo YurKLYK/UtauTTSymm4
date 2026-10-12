@@ -3,7 +3,7 @@ package speechtiming
 import (
 	"math"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 // Spanはフレーズ先頭基準の音素区間（秒）。

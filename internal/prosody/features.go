@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func smoothstep01(value float64) float64 {

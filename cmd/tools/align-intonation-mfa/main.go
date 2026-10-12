@@ -12,10 +12,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/sourcephone"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 	"golang.org/x/text/unicode/norm"
-	"utautts/cmd/tools/internal/sourcephone"
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/openjtalk"
 )
 
 var onsetPhones = map[string]bool{"a": true, "i": true, "ɯ": true, "e": true, "o": true, "aː": true, "iː": true, "ɯː": true, "eː": true, "oː": true, "i̥": true, "ɯ̥": true, "ɴ": true, "ʔ": true}

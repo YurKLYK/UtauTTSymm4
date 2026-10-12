@@ -3,9 +3,9 @@ package worldline
 import (
 	"math"
 
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 const (

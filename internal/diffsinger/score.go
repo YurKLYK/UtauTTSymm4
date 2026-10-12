@@ -6,8 +6,8 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/audio"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 type Score = provider.NeuralScore

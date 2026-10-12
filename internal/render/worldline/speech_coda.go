@@ -3,11 +3,11 @@ package worldline
 import (
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
-	"utautts/internal/speechwindow"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/speechwindow"
 )
 
 // 固定部の候補が弱ければ、信頼度の高い立ち上がりを保護する。

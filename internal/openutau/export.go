@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // 1発話を1パート、音源ごとに1トラック、モーラごとに1ノートへ対応付ける。

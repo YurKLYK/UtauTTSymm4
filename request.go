@@ -6,8 +6,8 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/settings"
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 func (r Request) internal() (synth.Request, error) {

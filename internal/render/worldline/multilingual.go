@@ -2,12 +2,12 @@ package worldline
 
 import (
 	"fmt"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/speechwindow"
 	"math"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
-	"utautts/internal/speechwindow"
 )
 
 func multilingualScore(p *plan.Plan) bool {

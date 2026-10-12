@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"utautts/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 )
 
 var hostFiles = []string{"config.js", "asset-paths.js", "bootstrap.js", "engine-loader.js", "engine-worker.js", "utautts.js", "qtloader.js"}

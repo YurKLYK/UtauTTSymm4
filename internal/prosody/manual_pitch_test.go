@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func TestManualPitchCurveInterpolatesMoraCenters(t *testing.T) {

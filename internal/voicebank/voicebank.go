@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"utautts/internal/connection"
-	"utautts/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/oto"
 )
 
 var ErrNoOto = errors.New("voicebank contains no oto.ini")

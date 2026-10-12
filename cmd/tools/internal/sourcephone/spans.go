@@ -5,7 +5,7 @@ import (
 	"math"
 	"path/filepath"
 
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func symbols(raw []any) []string {

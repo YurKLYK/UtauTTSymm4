@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"utautts/internal/audio"
-	"utautts/internal/lifecycle"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 // 合成間でbridgeとONNXセッションを使い回す。

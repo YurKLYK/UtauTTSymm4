@@ -3,9 +3,9 @@ package voicebank
 import (
 	"math"
 
-	"utautts/internal/oto"
-	"utautts/internal/pitch"
-	"utautts/internal/sourceaudio"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/pitch"
+	"github.com/yh2237/UtauTTS/internal/sourceaudio"
 )
 
 const (

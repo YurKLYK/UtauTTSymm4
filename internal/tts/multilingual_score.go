@@ -1,10 +1,10 @@
 package tts
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 	"math"
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
 )
 
 // 原音alias数に依存せず、音素ごとの長さを決める。

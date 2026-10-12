@@ -1,11 +1,11 @@
 package plan
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"math"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
-	"utautts/internal/voicebank"
 )
 
 func TestSpeechCodaUsesPhoneBudgetAndRetainsGaps(t *testing.T) {

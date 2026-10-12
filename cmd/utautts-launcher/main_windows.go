@@ -13,7 +13,7 @@ import (
 	"time"
 	"unsafe"
 
-	"utautts/internal/updatelock"
+	"github.com/yh2237/UtauTTS/internal/updatelock"
 )
 
 func main() {

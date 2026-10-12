@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 type Predictor interface {

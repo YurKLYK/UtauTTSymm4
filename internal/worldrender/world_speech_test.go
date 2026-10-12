@@ -2,10 +2,10 @@ package worldrender
 
 import (
 	"encoding/json"
+	"github.com/yh2237/UtauTTS/internal/provider"
 	"math"
 	"reflect"
 	"testing"
-	"utautts/internal/provider"
 )
 
 func TestExplicitSpeechAnchorsInterpolationAndValidation(t *testing.T) {

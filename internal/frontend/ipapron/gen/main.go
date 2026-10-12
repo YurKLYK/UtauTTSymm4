@@ -7,7 +7,7 @@ import (
 
 	"github.com/ikawaha/kagome-dict/ipa"
 
-	"utautts/internal/frontend/ipapron"
+	"github.com/yh2237/UtauTTS/internal/frontend/ipapron"
 )
 
 func main() {

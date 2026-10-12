@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 func TestHighPassKeepsStopTransient(t *testing.T) {

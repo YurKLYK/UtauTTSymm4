@@ -2,9 +2,9 @@ package sidecar
 
 import (
 	"fmt"
+	"github.com/yh2237/UtauTTS/internal/atomicfile"
 	"path/filepath"
 	"strings"
-	"utautts/internal/atomicfile"
 
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/transform"

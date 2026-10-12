@@ -13,10 +13,10 @@ import (
 	"time"
 	"unicode"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
-	"utautts/internal/processutil"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/processutil"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 func utauPitchIntervalMS(tempo float64) float64 {

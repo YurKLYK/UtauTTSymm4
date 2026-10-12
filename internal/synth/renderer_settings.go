@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"utautts/internal/render"
-	"utautts/internal/settings"
-	"utautts/internal/tts"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/tts"
 )
 
 type rendererSettingsResolution struct {

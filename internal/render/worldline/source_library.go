@@ -1,13 +1,13 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"math"
 	"path/filepath"
-	"utautts/internal/oto"
-	"utautts/internal/plan"
-	"utautts/internal/plugin"
-	"utautts/internal/render/base"
-	"utautts/internal/voicebank"
 )
 
 func sourceLibraries(p *plan.Plan, cfg base.Config) []*voicebank.SourcePhoneLibrary {

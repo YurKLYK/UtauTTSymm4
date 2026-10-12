@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"utautts/internal/updatelock"
+	"github.com/yh2237/UtauTTS/internal/updatelock"
 )
 
 var logPath = filepath.Join(os.TempDir(), "utautts-updater.log")

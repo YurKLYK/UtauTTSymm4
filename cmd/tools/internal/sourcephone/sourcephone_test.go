@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func testDir(t *testing.T) string {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/connection"
 )
 
 type stringList []string

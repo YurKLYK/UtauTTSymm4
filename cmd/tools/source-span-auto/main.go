@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"utautts/cmd/tools/internal/sourcephone"
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/sourcephone"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func read(path string) (map[string]any, error) {

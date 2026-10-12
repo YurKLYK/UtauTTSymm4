@@ -2,7 +2,7 @@ module example.com/utautts-synthesis
 
 go 1.27.0
 
-require utautts v0.0.0
+require github.com/yh2237/UtauTTS v0.0.0
 
 require (
 	github.com/ikawaha/kagome-dict v1.1.7 // indirect
@@ -15,4 +15,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace utautts => ../..
+replace github.com/yh2237/UtauTTS => ../..

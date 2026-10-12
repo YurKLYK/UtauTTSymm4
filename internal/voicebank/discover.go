@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/diffsinger"
 )
 
 type Summary struct {

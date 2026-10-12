@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // 言語固有処理をまとめる。レンダラーの判定は共通処理のcapabilityへ委ねる。

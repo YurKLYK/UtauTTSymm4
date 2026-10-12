@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 func TestWorldlineRejectsUnknownCVVCTimingBeforeResolvingAssets(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func TestFramePitchModelPredictsBoundedContinuousContour(t *testing.T) {

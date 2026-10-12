@@ -368,7 +368,7 @@ func findRoot() (string, error) {
 	}
 	for {
 		data, err := os.ReadFile(filepath.Join(current, "go.mod"))
-		if err == nil && strings.Contains(string(data), "module utautts") {
+		if err == nil && strings.Contains(string(data), "module github.com/yh2237/UtauTTS") {
 			return current, nil
 		}
 		parent := filepath.Dir(current)

@@ -1,9 +1,9 @@
 package prosody
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
 	"reflect"
 	"testing"
-	"utautts/internal/frontend"
 )
 
 func TestEnglishFrameFeaturesIgnoreBankAliases(t *testing.T) {

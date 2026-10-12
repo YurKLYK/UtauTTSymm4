@@ -1,8 +1,8 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
 	"sort"
-	"utautts/internal/frontend"
 )
 
 // 最大被覆の経路を最大8件残す。接続数だけで早期確定しない。

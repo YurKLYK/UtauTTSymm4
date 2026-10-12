@@ -3,8 +3,8 @@ package tts
 import (
 	"math"
 
-	"utautts/internal/prosody"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 // 自動輪郭を鈍らせないよう、手動補正だけに制限をかける。

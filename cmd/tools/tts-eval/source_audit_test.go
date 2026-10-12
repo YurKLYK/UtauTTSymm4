@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/yh2237/UtauTTS/internal/audio"
 	"testing"
-	"utautts/internal/audio"
 )
 
 func TestAuditClipClampsStereoAndCopies(t *testing.T) {

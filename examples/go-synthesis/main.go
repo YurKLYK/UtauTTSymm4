@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"utautts"
+	"github.com/yh2237/UtauTTS"
 )
 
 func main() {

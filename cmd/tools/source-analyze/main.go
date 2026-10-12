@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"utautts/internal/audio"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
-	"utautts/internal/plan"
-	"utautts/internal/voicebank"
 )
 
 type observation struct {

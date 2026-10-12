@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
 )
 
 func TestSingleCVBoundaryBridgeOnlyAppliesWhenItImproves(t *testing.T) {

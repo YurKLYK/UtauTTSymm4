@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"utautts/internal/lifecycle"
-	"utautts/internal/plugin"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 type RuntimeConfig struct {

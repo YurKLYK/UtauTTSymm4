@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"utautts/internal/audio"
-	"utautts/internal/engine"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 const externalRendererHelperEnabled = "UTAUTTS_EXTERNAL_RENDERER_HELPER"

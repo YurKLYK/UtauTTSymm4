@@ -7,7 +7,7 @@ import (
 
 	"github.com/yh2237/audiodsp/wav"
 
-	"utautts/internal/atomicfile"
+	"github.com/yh2237/UtauTTS/internal/atomicfile"
 )
 
 type PCM struct {

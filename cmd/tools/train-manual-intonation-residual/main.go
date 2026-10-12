@@ -12,10 +12,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 	"github.com/yh2237/gograd/autograd"
 	"github.com/yh2237/gograd/tensor"
-	"utautts/cmd/tools/internal/toolutil"
-	"utautts/internal/openjtalk"
 )
 
 type config struct {

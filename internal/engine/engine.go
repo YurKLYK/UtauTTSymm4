@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"utautts/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/plugin"
 )
 
 // PublicIDはプロジェクト保存・UI表示・CLI／HTTP APIで使う安定識別子。

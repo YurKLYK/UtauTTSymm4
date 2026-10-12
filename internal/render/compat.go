@@ -3,10 +3,10 @@ package render
 import (
 	"context"
 
-	"utautts/internal/audio"
-	"utautts/internal/plan"
-	"utautts/internal/provider"
-	"utautts/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render/base"
 )
 
 // 共有層(base)の型を外部互換のため再公開する。

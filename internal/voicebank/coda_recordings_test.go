@@ -1,10 +1,10 @@
 package voicebank
 
 import (
+	"github.com/yh2237/UtauTTS/internal/connection"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/oto"
 	"testing"
-	"utautts/internal/connection"
-	"utautts/internal/frontend"
-	"utautts/internal/oto"
 )
 
 func TestEndingRecordingsOptimizeJoinsAndRespectMissingPhoneGap(t *testing.T) {

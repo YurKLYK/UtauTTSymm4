@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/cmd/tools/internal/sourcephone"
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/sourcephone"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 func TestPrepareImport(t *testing.T) {

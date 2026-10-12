@@ -3,7 +3,7 @@ package tts
 import (
 	"strings"
 
-	"utautts/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/frontend"
 )
 
 func shouldUseLanguagePhoneTiming(language string, singleCV bool) bool {

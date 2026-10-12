@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"slices"
 
-	"utautts/internal/lifecycle"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/lifecycle"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 // gateで同時実行を防ぎ、合成間でWORLDの常駐状態を維持する。

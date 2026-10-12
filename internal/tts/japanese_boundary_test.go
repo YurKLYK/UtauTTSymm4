@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 func flatPitchCurve(frames int) *render.PitchCurve {

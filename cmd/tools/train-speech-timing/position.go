@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"utautts/cmd/tools/internal/toolutil"
+	"github.com/yh2237/UtauTTS/cmd/tools/internal/toolutil"
 )
 
 // 文内の位置の特徴（F0ブランチの入力、--f0-position）。ランタイムのtts.unifiedProsodyPositionと同じ定義。

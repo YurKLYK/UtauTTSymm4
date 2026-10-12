@@ -5,15 +5,15 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/diffsinger"
-	"utautts/internal/engine"
-	"utautts/internal/frontend"
-	"utautts/internal/neural"
-	"utautts/internal/openutau"
-	"utautts/internal/plan"
-	"utautts/internal/prosody"
-	"utautts/internal/provider"
-	"utautts/internal/render"
+	"github.com/yh2237/UtauTTS/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/neural"
+	"github.com/yh2237/UtauTTS/internal/openutau"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/render"
 )
 
 type Synthesizer struct{}

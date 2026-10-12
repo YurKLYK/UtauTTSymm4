@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"utautts/internal/synth"
+	"github.com/yh2237/UtauTTS/internal/synth"
 )
 
 func (request *SynthesisRequest) UnmarshalJSON(data []byte) error {

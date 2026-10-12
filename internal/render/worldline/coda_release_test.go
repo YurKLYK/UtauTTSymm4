@@ -4,10 +4,10 @@ import (
 	"math"
 	"testing"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 func TestCodaReleaseScope(t *testing.T) {

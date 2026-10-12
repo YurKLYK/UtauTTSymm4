@@ -10,8 +10,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/yh2237/UtauTTS/internal/openjtalk"
 	"github.com/yh2237/gograd/autograd"
-	"utautts/internal/openjtalk"
 )
 
 type predictionCase struct {

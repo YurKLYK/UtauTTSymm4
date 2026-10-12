@@ -5,11 +5,11 @@ import (
 	"math"
 	"strings"
 
-	"utautts/internal/frontend"
-	"utautts/internal/prosody"
-	"utautts/internal/render"
-	"utautts/internal/settings"
-	"utautts/internal/voicebank"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/render"
+	"github.com/yh2237/UtauTTS/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 )
 
 type englishProfile struct{}

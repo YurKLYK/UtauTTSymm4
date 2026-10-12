@@ -3,11 +3,11 @@ package tts
 import (
 	"sync"
 
-	"utautts/internal/engine"
-	"utautts/internal/neural"
+	"github.com/yh2237/UtauTTS/internal/engine"
+	"github.com/yh2237/UtauTTS/internal/neural"
 
 	// DiffSingerなどのprovider実装は低層パッケージ側で自身を登録する。
-	_ "utautts/internal/diffsinger/adapter"
+	_ "github.com/yh2237/UtauTTS/internal/diffsinger/adapter"
 )
 
 type NeuralSynthesizer interface {

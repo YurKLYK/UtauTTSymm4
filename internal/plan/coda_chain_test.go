@@ -1,10 +1,10 @@
 package plan
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"math"
 	"testing"
-	"utautts/internal/frontend"
-	"utautts/internal/voicebank"
 )
 
 func TestExpandedCodaUnitsKeepIndividualPhoneSlots(t *testing.T) {

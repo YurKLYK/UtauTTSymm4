@@ -1,12 +1,12 @@
 package worldline
 
 import (
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/render/base"
+	"github.com/yh2237/UtauTTS/internal/voicebank"
 	"os"
 	"path/filepath"
 	"testing"
-	"utautts/internal/plan"
-	"utautts/internal/render/base"
-	"utautts/internal/voicebank"
 )
 
 func TestSourceLibraryUsesCurrentPhoneTimingAndRejectsRepeatedCoda(t *testing.T) {

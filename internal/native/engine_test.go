@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"utautts/internal/audio"
+	"github.com/yh2237/UtauTTS/internal/audio"
 )
 
 const openJTalkHelperEnvironment = "UTAUTTS_TEST_OPENJTALK_HELPER"

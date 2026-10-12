@@ -3,8 +3,8 @@ package base
 import (
 	"math"
 
-	"utautts/internal/plan"
-	"utautts/internal/provider"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/provider"
 )
 
 func OpenUtauPhoneTimings(units []plan.Unit, cvvcTiming string) ([]OpenUtauPhoneTiming, float64) {

@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"utautts/internal/diffsinger"
-	"utautts/internal/plugin"
-	"utautts/internal/prosody"
+	"github.com/yh2237/UtauTTS/internal/diffsinger"
+	"github.com/yh2237/UtauTTS/internal/plugin"
+	"github.com/yh2237/UtauTTS/internal/prosody"
 )
 
 func TestDiffSingerIsRegisteredAsNeuralSynthesizer(t *testing.T) {

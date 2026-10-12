@@ -3,9 +3,9 @@ package worldline
 import (
 	"math"
 
-	"utautts/internal/frontend"
-	"utautts/internal/plan"
-	"utautts/internal/settings"
+	"github.com/yh2237/UtauTTS/internal/frontend"
+	"github.com/yh2237/UtauTTS/internal/plan"
+	"github.com/yh2237/UtauTTS/internal/settings"
 )
 
 // 母音開始を基準としたテンプレートの始点(ms)。点は10ms間隔。

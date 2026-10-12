@@ -1,9 +1,9 @@
 package tts
 
 import (
+	"github.com/yh2237/UtauTTS/internal/frontend"
 	"math"
 	"testing"
-	"utautts/internal/frontend"
 )
 
 func TestSpeechClockIndependentOfEnglishBankFormat(t *testing.T) {
