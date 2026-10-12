@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"utautts/internal/api"
@@ -25,6 +30,13 @@ func isLoopbackHost(host string) bool {
 }
 
 func main() {
+	if err := run(); err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+}
+
+func run() (runErr error) {
 	var port int
 	var host string
 	var showVersion bool
@@ -50,7 +62,7 @@ func main() {
 	flag.Parse()
 	if showVersion {
 		fmt.Printf("%s %s\n", appinfo.Name(), appinfo.Version())
-		return
+		return nil
 	}
 	if config.AuthToken == "" && !isLoopbackHost(host) {
 		log.Printf("warning: listening on %s without an auth token; all API endpoints are unauthenticated", host)
@@ -58,17 +70,37 @@ func main() {
 
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	defer listener.Close()
 	apiServer, err := api.New(config)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	defer func() { runErr = errors.Join(runErr, apiServer.Close()) }()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	url := "http://" + listener.Addr().String()
 	fmt.Printf("UTAUTTS_READY=%s\n", url)
 	log.Printf("listening on %s", url)
 	server := &http.Server{Handler: apiServer.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 10 * time.Minute, IdleTimeout: 60 * time.Second}
-	if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
+	server.BaseContext = func(net.Listener) context.Context { return ctx }
+	served := make(chan error, 1)
+	go func() { served <- server.Serve(listener) }()
+	select {
+	case err := <-served:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
+	case <-ctx.Done():
+		shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		err := server.Shutdown(shutdown)
+		if err != nil {
+			err = errors.Join(err, server.Close())
+		}
+		<-served
+		return err
 	}
 }

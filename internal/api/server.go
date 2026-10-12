@@ -18,6 +18,7 @@ import (
 	"utautts/internal/audio"
 	"utautts/internal/diffsinger"
 	"utautts/internal/plugin"
+	"utautts/internal/render"
 	"utautts/internal/synth"
 	"utautts/internal/tts"
 	"utautts/internal/voicebank"
@@ -84,6 +85,7 @@ type Server struct {
 	catalog             *plugin.Catalog
 	service             *synth.Service
 	voiceLibrary        *voicebank.Library
+	runtime             *synth.Runtime
 }
 
 type apiVoicebankResolver struct {
@@ -119,7 +121,9 @@ func New(config Config) (*Server, error) {
 		return nil, err
 	}
 	srv.renderer, srv.catalog, srv.service = runtime.Renderer, runtime.Catalog, runtime.Service
+	srv.runtime = runtime
 	if err := srv.loadVoiceDirectory(); err != nil {
+		_ = runtime.Close()
 		return nil, fmt.Errorf("load voicebanks from %s: %w", voiceDir, err)
 	}
 	if len(srv.voicebanks) == 0 {
@@ -127,6 +131,13 @@ func New(config Config) (*Server, error) {
 	}
 
 	return srv, nil
+}
+
+func (s *Server) Close() error {
+	if s.runtime == nil {
+		return nil
+	}
+	return s.runtime.Close()
 }
 
 func (s *Server) Handler() http.Handler {
@@ -179,6 +190,13 @@ func tokenEqual(left, right string) bool {
 }
 
 func (s *Server) loadVoiceDirectory() error {
+	if s.runtime != nil {
+		return s.runtime.Reload(s.reloadVoiceDirectory)
+	}
+	return s.reloadVoiceDirectory()
+}
+
+func (s *Server) reloadVoiceDirectory() error {
 	if s.voiceLibrary == nil {
 		s.voiceLibrary = voicebank.NewLibrary(s.voiceDir)
 	}
@@ -205,7 +223,11 @@ func (s *Server) loadVoiceDirectory() error {
 	s.mu.Lock()
 	s.voicebanks = next
 	s.mu.Unlock()
-	tts.ClearCaches()
+	if s.runtime != nil {
+		render.ClearWAVCache()
+	} else {
+		tts.ClearCaches()
+	}
 	return nil
 }
 
@@ -351,14 +373,25 @@ func (s *Server) handleRegisterVoicebank(w http.ResponseWriter, r *http.Request)
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	if s.voiceLibrary == nil {
-		s.voiceLibrary = voicebank.NewLibrary(s.voiceDir)
+	register := func() error {
+		if s.voiceLibrary == nil {
+			s.voiceLibrary = voicebank.NewLibrary(s.voiceDir)
+		}
+		vb.ID = s.voiceLibrary.Add(summary)
+		s.mu.Lock()
+		s.voicebanks[vb.ID] = vb
+		s.mu.Unlock()
+		return nil
 	}
-	vb.ID = s.voiceLibrary.Add(summary)
-	s.mu.Lock()
-	s.voicebanks[vb.ID] = vb
-	s.mu.Unlock()
-	tts.ClearCaches()
+	if s.runtime != nil {
+		if err := s.runtime.Reload(register); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	} else {
+		_ = register()
+		tts.ClearCaches()
+	}
 	writeJSON(w, http.StatusOK, vb)
 }
 

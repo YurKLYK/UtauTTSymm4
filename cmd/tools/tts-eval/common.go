@@ -16,6 +16,7 @@ import (
 )
 
 type caseOptions struct {
+	service                   *synth.Service
 	bank, aliasPolicy, bridge string
 	model, modelFile          string
 	prosodyModelPath          string
@@ -63,7 +64,10 @@ func synthesizeCase(p prompt, o caseOptions, catalog *plugin.Catalog) (*synth.Re
 	request.PauseContextStrength = o.pauseContextStrength
 	request.EnglishWeakForm = o.englishWeakForm
 	request.Worldline = render.WorldlineProviderOptions{TimingWarp: new(!o.noTimingWarp)}
-	service := synth.NewService(catalog, o.rendererID, o.bridge, "", "", nil)
+	service := o.service
+	if service == nil {
+		service = synth.NewService(catalog, o.rendererID, o.bridge, "", "", nil)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), o.timeout)
 	defer cancel()
 	started := time.Now()

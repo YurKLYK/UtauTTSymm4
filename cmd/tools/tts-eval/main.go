@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"utautts/internal/atomicfile"
-	"utautts/internal/plugin"
 	"utautts/internal/render"
 	"utautts/internal/synth"
 )
@@ -148,10 +147,12 @@ func run() (runErr error) {
 		}
 		return diagnoseCorpus(*bank, *out, prompts)
 	}
-	catalog, err := plugin.DiscoverWithDefaults(nil, nil, render.IsKnownRenderer)
+	synthesisRuntime, err := synth.NewRuntime(synth.RuntimeConfig{WorldlineBridgePath: *bridge}, nil)
 	if err != nil {
 		return err
 	}
+	defer func() { runErr = errors.Join(runErr, synthesisRuntime.Close()) }()
+	catalog := synthesisRuntime.Catalog
 	prosody, ok := catalog.Model(*model)
 	modelIdentity := *model
 	if *modelFile != "" {
@@ -200,7 +201,8 @@ func run() (runErr error) {
 					profile.SetCase(p.ID, rendererID, repetition)
 				}
 				result, elapsed, callErr := synthesizeCase(p, caseOptions{
-					bank: *bank, aliasPolicy: *aliasPolicy, bridge: *bridge,
+					service: synthesisRuntime.Service,
+					bank:    *bank, aliasPolicy: *aliasPolicy, bridge: *bridge,
 					model: *model, modelFile: *modelFile, prosodyModelPath: prosodyPath,
 					moraMS:     *moraMS,
 					rendererID: rendererID, resampler: *resampler, wavtool: *wavtool,

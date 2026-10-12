@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"utautts/internal/appinfo"
 	"utautts/internal/openutau"
@@ -18,6 +22,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+}
+
+func run() (runErr error) {
 	var (
 		voicebankPath            string
 		reading                  string
@@ -140,7 +151,7 @@ func main() {
 	flag.Parse()
 	if showVersion {
 		fmt.Printf("%s %s\n", appinfo.Name(), appinfo.Version())
-		return
+		return nil
 	}
 	runtime, err := synth.NewRuntime(synth.RuntimeConfig{
 		Renderer: renderer, WorldlineBridgePath: worldlineBridgePath,
@@ -148,34 +159,42 @@ func main() {
 		RendererDirectories: rendererDirectories, ModelDirectories: modelDirectories,
 	}, nil)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	defer func() { runErr = errors.Join(runErr, runtime.Close()) }()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, release, err := runtime.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
 	resolver := runtime.Service
 
 	if voicebankPath == "" || (reading == "" && text == "") || outPath == "" {
 		flag.Usage()
-		log.Fatal("--voicebank, --out, and either --text or --reading are required")
+		return errors.New("--voicebank, --out, and either --text or --reading are required")
 	}
 
 	pitchFactors, err := loadPitchFactors(pitchContourPath, pitchContourCase)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	prosodyFeatures, err := loadProsodyFeatures(prosodyFeaturesPath, prosodyFeaturesCase, text, reading)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	dictionary, err := loadDictionary(dictionaryPath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	moraDurations, err := loadMoraDurations(moraDurationsPath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	resamplerExpressions, err := loadResamplerExpressions(resamplerExpressionsPath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	synthesisRequest := synth.Request{
 		VoicebankPath:           voicebankPath,
@@ -222,11 +241,12 @@ func main() {
 	}
 	resolvedSynthesis, err := resolver.ResolveSynthesis(synthesisRequest)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	resolvedSynthesis.Config.Context = ctx
 	output, err := synth.SynthesizeResolved(resolvedSynthesis)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	exportText := text
 	if exportText == "" {
@@ -235,16 +255,16 @@ func main() {
 	if err := synth.WriteFiles(outPath, output, synth.ExportOptions{
 		Text: exportText, WriteText: writeText, WriteLab: writeLab, TextEncoding: textEncoding,
 	}); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if planPath != "" {
 		data, err := json.MarshalIndent(output.RenderedPlan(), "", "  ")
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		data = append(data, '\n')
 		if err := os.WriteFile(planPath, data, 0o644); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	if ustxOut != "" {
@@ -253,15 +273,16 @@ func main() {
 			Curves: ustxFrameCurves(resolvedSynthesis.Config, 1),
 		})
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := os.WriteFile(ustxOut, data, 0o644); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
 	duration := output.DurationMS / 1000
 	fmt.Printf("wrote %s (%.2fs, %d Hz, %d units)\n", outPath, duration, output.Audio.SampleRate, len(output.Plan.Units))
+	return nil
 }
 
 func loadResamplerExpressions(path string) ([]render.ResamplerExpression, error) {

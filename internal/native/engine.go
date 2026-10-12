@@ -9,12 +9,10 @@ import (
 
 	"utautts/internal/appinfo"
 	"utautts/internal/frontend"
-	"utautts/internal/neural"
 	"utautts/internal/openutau"
 	"utautts/internal/plugin"
 	"utautts/internal/render"
 	"utautts/internal/synth"
-	"utautts/internal/tts"
 	"utautts/internal/voicebank"
 )
 
@@ -35,6 +33,7 @@ type Engine struct {
 	voicebanks *voicebank.Library
 	catalog    *plugin.Catalog
 	synth      *synth.Service
+	runtime    *synth.Runtime
 }
 
 func New(config Config) (*Engine, error) {
@@ -51,8 +50,10 @@ func New(config Config) (*Engine, error) {
 		return nil, err
 	}
 	engine.config.Renderer, engine.catalog, engine.synth = runtime.Renderer, runtime.Catalog, runtime.Service
+	engine.runtime = runtime
 	if err := engine.reload(); err != nil {
 		engine.cancel()
+		_ = runtime.Close()
 		return nil, fmt.Errorf("load voicebanks: %w", err)
 	}
 	// wasm では初回推論が重く起動を遅らせるため、warmUp は行わない。
@@ -89,8 +90,7 @@ func (e *Engine) Call(method string, requestJSON []byte) ([]byte, error) {
 	switch method {
 	case "shutdown":
 		e.cancel()
-		_ = render.CloseProviderSessions()
-		_ = neural.CloseSessions()
+		err = e.runtime.Close()
 		result = map[string]bool{"ok": true}
 	case "health":
 		result = map[string]any{"status": "ok", "engine": e.config.Renderer, "version": appinfo.Version()}
@@ -141,12 +141,10 @@ func (r nativeVoicebankResolver) Resolve(id string) (string, bool) {
 }
 
 func (e *Engine) reload() error {
-	if err := e.voicebanks.Reload(); err != nil {
-		return err
-	}
-	// 音源パス変更時にデコード済みWAVやBankキャッシュが残るのを防ぐ。
-	tts.ClearCaches()
-	return nil
+	return e.runtime.Reload(func() error {
+		render.ClearWAVCache()
+		return e.voicebanks.Reload()
+	})
 }
 
 func (e *Engine) voicebankList() []map[string]any {
