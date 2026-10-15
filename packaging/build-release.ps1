@@ -2,14 +2,15 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Ymm4Directory,
     [Parameter(Mandatory = $true)]
-    [string]$UtauTtsReleaseDirectory
+    [string]$UtauTtsReleaseDirectory,
+    [string]$DotnetExecutable = "dotnet"
 )
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$Version = "0.1.5"
+$Version = "0.2.0"
 $BuildRoot = Join-Path $ProjectRoot "build"
-$RuntimeRoot = Join-Path $BuildRoot "utautts-runtime-v1.5.1"
+$RuntimeRoot = Join-Path $BuildRoot "utautts-runtime-v1.5.4"
 $PackageRoot = Join-Path $BuildRoot "UTAUTalkVoice-$Version"
 $DistRoot = Join-Path $ProjectRoot "dist"
 
@@ -17,11 +18,22 @@ foreach ($path in @($BuildRoot, $DistRoot)) {
     New-Item -ItemType Directory -Path $path -Force | Out-Null
 }
 
-& dotnet build (Join-Path $ProjectRoot "src\UTAUTalkVoice\UTAUTalkVoice.csproj") `
+function Remove-BuildDirectory([string]$Target) {
+    $fullTarget = [System.IO.Path]::GetFullPath($Target)
+    $fullBuildRoot = [System.IO.Path]::GetFullPath($BuildRoot)
+    if ([System.IO.Path]::GetDirectoryName($fullTarget) -ne $fullBuildRoot) {
+        throw "Unexpected build directory: $fullTarget"
+    }
+    if (Test-Path -LiteralPath $fullTarget) {
+        Remove-Item -LiteralPath $fullTarget -Recurse -Force
+    }
+}
+
+& $DotnetExecutable build (Join-Path $ProjectRoot "src\UTAUTalkVoice\UTAUTalkVoice.csproj") `
     -c Release -p:Ymm4Dir=$Ymm4Directory
 if ($LASTEXITCODE -ne 0) { throw "Plugin build failed" }
 
-if (Test-Path $RuntimeRoot) { Remove-Item -LiteralPath $RuntimeRoot -Recurse -Force }
+Remove-BuildDirectory $RuntimeRoot
 New-Item -ItemType Directory -Path `
     "$RuntimeRoot\tools", `
     "$RuntimeRoot\models", `
@@ -51,7 +63,7 @@ Copy-Item "$UtauTtsReleaseDirectory\docs\cli.md", `
 $UtauTtsArchive = Join-Path $BuildRoot "utautts.zip"
 Compress-Archive -Path "$RuntimeRoot\*" -DestinationPath $UtauTtsArchive -CompressionLevel Optimal -Force
 
-if (Test-Path $PackageRoot) { Remove-Item -LiteralPath $PackageRoot -Recurse -Force }
+Remove-BuildDirectory $PackageRoot
 New-Item -ItemType Directory -Path $PackageRoot | Out-Null
 Copy-Item (Join-Path $ProjectRoot "src\UTAUTalkVoice\bin\Release\net10.0-windows10.0.19041.0\UTAUTalkVoice.dll") $PackageRoot
 Copy-Item (Join-Path $ProjectRoot "README.md") $PackageRoot

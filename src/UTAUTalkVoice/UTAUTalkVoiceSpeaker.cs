@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+using System.Text.Json;
 using YukkuriMovieMaker.Plugin.Voice;
 
 namespace UTAUTalkVoice;
@@ -21,26 +22,35 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
     public IVoiceResource? Resource => null;
 
     public bool IsMatch(string api, string id) => api == API && id == ID;
+
     public IVoiceParameter CreateVoiceParameter() => new UTAUTalkVoiceParameter();
+
     public IVoiceParameter MigrateParameter(IVoiceParameter currentParameter) =>
         currentParameter is UTAUTalkVoiceParameter ? currentParameter : CreateVoiceParameter();
+
     public Task<string> ConvertKanjiToYomiAsync(string text, IVoiceParameter voiceParameter) =>
         throw new NotImplementedException();
 
-    public async Task<IVoicePronounce?> CreateVoiceAsync(
+    public Task<IVoicePronounce?> CreateVoiceAsync(
         string text,
         IVoicePronounce? pronounce,
         IVoiceParameter? parameter,
-        string filePath)
+        string filePath) => RenderAsync(text, parameter, filePath);
+
+    internal async Task<IVoicePronounce?> RenderAsync(
+        string text, IVoiceParameter? parameter, string filePath, string? planPath = null)
     {
         var p = parameter as UTAUTalkVoiceParameter ?? new UTAUTalkVoiceParameter();
         var voicebankDirectory = NormalizePath(p.VoicebankDirectory);
         if (!Directory.Exists(voicebankDirectory))
             throw new DirectoryNotFoundException($"UTAU音源フォルダが見つかりません: {voicebankDirectory}");
 
+        // UtauTTS must run with its distribution root as the working directory,
+        // so make the YMM4 destination independent from that directory first.
         var outputFilePath = Path.GetFullPath(filePath);
         Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath)!);
         await Semaphore.WaitAsync();
+        var editDirectory = Path.Combine(Path.GetTempPath(), "UTAUTalk-" + Guid.NewGuid().ToString("N"));
         try
         {
             var enginePath = EnsureUtauTts();
@@ -68,6 +78,24 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
             ];
             foreach (var arg in arguments)
                 startInfo.ArgumentList.Add(arg);
+            if (planPath is not null)
+            {
+                startInfo.ArgumentList.Add("--plan-out");
+                startInfo.ArgumentList.Add(planPath);
+            }
+
+            if (planPath is null && !string.IsNullOrWhiteSpace(p.MoraPitch))
+            {
+                var edits = JsonSerializer.Deserialize<MoraPitchDocument>(p.MoraPitch)
+                    ?? throw new InvalidDataException("一音ずつの抑揚データを読み込めません");
+                if (edits.Text != text)
+                    throw new InvalidOperationException("セリフが変更されています。「一音ずつの抑揚」で再解析するか、調整を解除してください。");
+                Directory.CreateDirectory(editDirectory);
+                var editFile = Path.Combine(editDirectory, "pitch.json");
+                await File.WriteAllTextAsync(editFile, edits.ManualPitchJson());
+                startInfo.ArgumentList.Add("--manual-pitch");
+                startInfo.ArgumentList.Add(editFile);
+            }
 
             using var process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException("UTAU Talk合成エンジンを起動できません");
@@ -82,7 +110,8 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
         }
         finally
         {
-            Semaphore.Release();
+            try { if (Directory.Exists(editDirectory)) Directory.Delete(editDirectory, true); }
+            finally { Semaphore.Release(); }
         }
 
         return null;
@@ -97,10 +126,10 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
         return names[note % 12] + (note / 12 - 1).ToString(CultureInfo.InvariantCulture);
     }
 
-    static string EnsureUtauTts()
+    internal static string EnsureUtauTts()
     {
         var resourceDirectory = Path.Combine(
-            AppContext.BaseDirectory, "user", "resources", "UTAUTalk", "utautts-1.5.1-japanese");
+            AppContext.BaseDirectory, "user", "resources", "UTAUTalk", "utautts-1.5.4-japanese");
         var executablePath = Path.Combine(resourceDirectory, "tools", "utautts-cli.exe");
         if (File.Exists(executablePath))
             return executablePath;
@@ -141,6 +170,6 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
                 Thread.Sleep(200 * (attempt + 1));
             }
         }
-        throw new IOException("UtauTTSの初回展開を完了できませんでした", lastError);
+        throw new IOException("UTAU Talk合成エンジンの初回展開を完了できませんでした", lastError);
     }
 }

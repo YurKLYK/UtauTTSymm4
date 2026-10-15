@@ -12,6 +12,11 @@ public sealed class UTAUTalkVoiceParameter : VoiceParameterBase
     double speechRate = 1.0;
     double intonation = 1.0;
     double accentStrength = 1.0;
+    string moraPitch = "";
+
+    [Display(Name = "一音ずつの抑揚", Description = "セリフを解析し、各モーラの高さを調整します。100セント＝半音")]
+    [MoraPitchEditor]
+    public string MoraPitch { get => moraPitch; set => Set(ref moraPitch, value); }
 
     [Display(Name = "UTAU音源", Description = "character.txtとoto.iniのある音源フォルダ")]
     [DirectorySelector]
@@ -44,4 +49,5 @@ public sealed class UTAUTalkVoiceParameter : VoiceParameterBase
     [Range(0.0, 2.0)]
     [DefaultValue(1.0)]
     public double AccentStrength { get => accentStrength; set => Set(ref accentStrength, value); }
+
 }

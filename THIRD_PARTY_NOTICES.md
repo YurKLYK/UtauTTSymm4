@@ -1,7 +1,7 @@
 # Third-party notices
 
 The release package redistributes an unmodified subset of the official
-[UtauTTS v1.5.1](https://github.com/yh2237/UtauTTS/releases/tag/v1.5.1)
+[UtauTTS v1.5.4](https://github.com/yh2237/UtauTTS/releases/tag/v1.5.4)
 Windows x64 release by yh2237: the CLI, Japanese Open JTalk runtime, Frame
 Intonation TCN v12 model, and WORLD phrase synthesis runtime.
 
