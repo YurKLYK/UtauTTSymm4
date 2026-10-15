@@ -89,24 +89,27 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
                 var edits = JsonSerializer.Deserialize<MoraPitchDocument>(p.MoraPitch)
                     ?? throw new InvalidDataException("一音ずつの抑揚データを読み込めません");
                 if (edits.Text != text)
-                    throw new InvalidOperationException("セリフが変更されています。「一音ずつの抑揚」で再解析するか、調整を解除してください。");
-                Directory.CreateDirectory(editDirectory);
-                var editFile = Path.Combine(editDirectory, "pitch.json");
-                await File.WriteAllTextAsync(editFile, edits.ManualPitchJson());
-                startInfo.ArgumentList.Add("--manual-pitch");
-                startInfo.ArgumentList.Add(editFile);
+                {
+                    Directory.CreateDirectory(editDirectory);
+                    var currentPlan = Path.Combine(editDirectory, "current-plan.json");
+                    startInfo.ArgumentList.Add("--plan-out");
+                    startInfo.ArgumentList.Add(currentPlan);
+                    await RunEngineAsync(startInfo, outputFilePath);
+                    startInfo.ArgumentList.RemoveAt(startInfo.ArgumentList.Count - 1);
+                    startInfo.ArgumentList.RemoveAt(startInfo.ArgumentList.Count - 1);
+                    edits = edits.RebaseTo(MoraPitchDocument.FromPlan(text, await File.ReadAllTextAsync(currentPlan)));
+                }
+                if (edits is not null)
+                {
+                    Directory.CreateDirectory(editDirectory);
+                    var editFile = Path.Combine(editDirectory, "pitch.json");
+                    await File.WriteAllTextAsync(editFile, edits.ManualPitchJson());
+                    startInfo.ArgumentList.Add("--manual-pitch");
+                    startInfo.ArgumentList.Add(editFile);
+                }
+                else return null; // Pronunciation really changed: keep the unedited WAV just rendered.
             }
-
-            using var process = Process.Start(startInfo)
-                ?? throw new InvalidOperationException("UTAU Talk合成エンジンを起動できません");
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
-            if (process.ExitCode != 0 || !File.Exists(outputFilePath))
-                throw new InvalidOperationException(
-                    $"UTAU Talkの音声生成に失敗しました（終了コード {process.ExitCode}）\n{stderr}\n{stdout}".Trim());
+            await RunEngineAsync(startInfo, outputFilePath);
         }
         finally
         {
@@ -115,6 +118,20 @@ public sealed class UTAUTalkVoiceSpeaker : IVoiceSpeaker
         }
 
         return null;
+    }
+
+    static async Task RunEngineAsync(ProcessStartInfo startInfo, string outputFilePath)
+    {
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("UTAU Talk合成エンジンを起動できません");
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+        if (process.ExitCode != 0 || !File.Exists(outputFilePath))
+            throw new InvalidOperationException(
+                $"UTAU Talkの音声生成に失敗しました（終了コード {process.ExitCode}）\n{stderr}\n{stdout}".Trim());
     }
 
     static string NormalizePath(string? path) => (path ?? string.Empty).Trim().Trim('"').Trim();

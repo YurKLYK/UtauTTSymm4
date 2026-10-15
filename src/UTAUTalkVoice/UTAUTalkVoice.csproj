@@ -6,10 +6,11 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>UTAUTalkVoice</AssemblyName>
     <RootNamespace>UTAUTalkVoice</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Ymm4Dir Condition="'$(Ymm4Dir)' == ''">C:\YukkuriMovieMaker_v4</Ymm4Dir>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="YmmPluginSmoke" />
     <Reference Include="YukkuriMovieMaker.Plugin">
       <HintPath>$(Ymm4Dir)\YukkuriMovieMaker.Plugin.dll</HintPath>
       <Private>false</Private>

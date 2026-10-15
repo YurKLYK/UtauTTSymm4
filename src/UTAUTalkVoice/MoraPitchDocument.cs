@@ -27,6 +27,24 @@ public sealed class MoraPitchDocument
         });
     }
 
+    // YMM4 may insert pause punctuation into the pronunciation passed to the speaker.
+    // Rebase by voiced mora, not by raw text or absolute positions (which include pauses).
+    public MoraPitchDocument? RebaseTo(MoraPitchDocument current)
+    {
+        if (Points.Count != current.Points.Count ||
+            !Points.Zip(current.Points).All(pair => pair.First.Mora == pair.Second.Mora))
+            return null;
+        return new MoraPitchDocument {
+            Text = current.Text,
+            Reading = current.Reading,
+            Points = Points.Zip(current.Points).Select(pair => new MoraPitchPoint {
+                Position = pair.Second.Position,
+                Mora = pair.Second.Mora,
+                Cents = pair.First.Cents,
+            }).ToList(),
+        };
+    }
+
     public static MoraPitchDocument FromPlan(string text, string json)
     {
         using var plan = JsonDocument.Parse(json);

@@ -8,7 +8,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$Version = "0.2.0"
+$Version = "0.2.1"
 $BuildRoot = Join-Path $ProjectRoot "build"
 $RuntimeRoot = Join-Path $BuildRoot "utautts-runtime-v1.5.4"
 $PackageRoot = Join-Path $BuildRoot "UTAUTalkVoice-$Version"

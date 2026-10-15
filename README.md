@@ -29,6 +29,8 @@ UTAU Talkのセリフを選ぶと、そのセリフの調整値を表示しま�
 
 変更は少し待つと選択中のセリフへ保存されます。「YMM4へ適用」ですぐ保存できます。セリフを切り替えた際も保存されます。音声はYMM4側で再生成してください。本文を変更した場合は古い一音調整を外して解析し直します。
 
+YMM4が発音へ句読点を補う場合も、同じモーラの調整は維持します。発音自体が別のモーラ列になった場合は古い調整を適用せず、音声を生成します。
+
 ## ビルド
 
 .NET 10 SDK、YMM4本体、公式UtauTTS v1.5.4 Windows x64配布物が必要です。
@@ -39,7 +41,7 @@ UTAU Talkのセリフを選ぶと、そのセリフの調整値を表示しま�
   -UtauTtsReleaseDirectory 'C:\path\to\UtauTTS-win-x64-v1.5.4'
 ```
 
-`dist/UTAUTalkVoice-0.2.0.ymme`が生成されます。ビルドスクリプトは日本語合成に必要なCLI・Open JTalk・v12モデル・WORLDランタイム・ライセンス文書のみを収録し、UTAU音源やUtauTTSのGUIは含めません。
+`dist/UTAUTalkVoice-0.2.1.ymme`が生成されます。ビルドスクリプトは日本語合成に必要なCLI・Open JTalk・v12モデル・WORLDランタイム・ライセンス文書のみを収録し、UTAU音源やUtauTTSのGUIは含めません。
 
 ## ライセンス
 
